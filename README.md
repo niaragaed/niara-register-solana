@@ -12,6 +12,16 @@ verify the same document on multiple chains.
 > Complementary evidentiary record. It does **not** replace a notary (cartório) or
 > ICP-Brasil and has no automatic legal effect.
 
+## Live on Solana devnet
+
+- Program: [`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`](https://explorer.solana.com/address/9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR?cluster=devnet)
+  — deployed at slot 509235352, upgrade authority held by the Niara deployer wallet
+- First real registration: [`4eFgDjZ6…cQBj`](https://explorer.solana.com/tx/4eFgDjZ6dzJzraZHGEoqxawxGaynttCUUUeUQkAtbCRnin9j6pMzMUEyB72Tmqyfa5YkbA6CA5CJYQ6jVjNMcQBj?cluster=devnet)
+- Web app: [niara-register.vercel.app/signatures](https://niara-register.vercel.app/signatures) — pick
+  **Solana Devnet**, drop a file, sign with Phantom/Solflare. The ledger below the form mirrors
+  records from Solana devnet and Ethereum Sepolia side by side (indexer in
+  [niaragaed/Niara-Register](https://github.com/niaragaed/Niara-Register), `indexer/solana.ts`).
+
 ## How it works
 
 | | |
@@ -72,8 +82,7 @@ wallet (Phantom/Solflare) only signs — the transaction is sent through a devne
 - Same as the EVM version: whoever lands the first transaction for a hash becomes
   its signer. A commit–reveal or multi-signer record (one PDA per
   `[hash, signer]`) is on the roadmap for contracts with several parties.
-- Devnet only for now. The indexer that mirrors Sepolia records into Postgres
-  does not read Solana yet.
+- Devnet only for now (mainnet after an external audit).
 
 ## Development history (disclosure)
 
