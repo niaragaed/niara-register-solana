@@ -5,9 +5,11 @@ for documents. Only the document's SHA-256 hash is recorded; the file itself nev
 leaves the user's browser.
 
 It is the Solana port of `RegistroAssinaturas.sol`
-([niaragaed/niara-contracts-Register](https://github.com/niaragaed/niara-contracts-Register),
-live on Ethereum Sepolia), with the same rules, so Niara Register can record and
-verify the same document on multiple chains.
+([niaragaed/niara-contracts-Register](https://github.com/niaragaed/niara-contracts-Register)),
+with the same rules. That contract is live at the same address,
+`0x5627857ee73f37d6da96530ed08c07339dd9d93a`, on Ethereum Sepolia, Base
+Sepolia, Robinhood Chain Testnet, HyperEVM Testnet and Tempo Testnet. Together
+they let Niara Register record and verify the same document on six networks.
 
 > Complementary evidentiary record. It does **not** replace a notary (cartório) or
 > ICP-Brasil and has no automatic legal effect.
@@ -17,10 +19,12 @@ verify the same document on multiple chains.
 - Program: [`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`](https://explorer.solana.com/address/9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR?cluster=devnet)
   — deployed at slot 509235352, upgrade authority held by the Niara deployer wallet
 - First real registration: [`4eFgDjZ6…cQBj`](https://explorer.solana.com/tx/4eFgDjZ6dzJzraZHGEoqxawxGaynttCUUUeUQkAtbCRnin9j6pMzMUEyB72Tmqyfa5YkbA6CA5CJYQ6jVjNMcQBj?cluster=devnet)
-- Web app: [niara-register.vercel.app/signatures](https://niara-register.vercel.app/signatures) — pick
-  **Solana Devnet**, drop a file, sign with Phantom/Solflare. The ledger below the form mirrors
-  records from Solana devnet and Ethereum Sepolia side by side (indexer in
-  [niaragaed/Niara-Register](https://github.com/niaragaed/Niara-Register), `indexer/solana.ts`).
+- Web app: [niara-register.vercel.app/signatures](https://niara-register.vercel.app/signatures). Pick
+  **Solana Devnet**, drop a file, and sign with Phantom or Solflare. The ledger below the form
+  mirrors records from all six networks side by side: Solana Devnet, Ethereum Sepolia, Base
+  Sepolia, Robinhood Chain Testnet, HyperEVM Testnet and Tempo Testnet. The indexer is in
+  [niaragaed/Niara-Register](https://github.com/niaragaed/Niara-Register) (`indexer/solana.ts`
+  for Solana, `indexer/evm-assinaturas.ts` for the EVM networks).
 
 ## How it works
 
@@ -82,10 +86,12 @@ wallet (Phantom/Solflare) only signs — the transaction is sent through a devne
 - Same as the EVM version: whoever lands the first transaction for a hash becomes
   its signer. A commit–reveal or multi-signer record (one PDA per
   `[hash, signer]`) is on the roadmap for contracts with several parties.
-- Devnet only for now (mainnet after an external audit).
+- Devnet only for now. Mainnet comes after an external audit.
 
 ## Development history (disclosure)
 
 The EVM contract this program ports, the Niara-Register site and its Sepolia
-indexer were built in September 2026. This Solana program and the site's Solana
-integration were written in October 2026, during the Crypto World's Fair hackathon.
+indexer were built in September 2026. Everything else was written in October
+2026, during the Crypto World's Fair hackathon: this Solana program, the site's
+Solana integration, the multichain ledger and indexers, and the EVM deployments
+on Base, Robinhood Chain, HyperEVM and Tempo.
