@@ -9,13 +9,13 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(hash_documento: [u8; 32])]
 pub struct Registrar<'info> {
-    /// Quem assina é quem paga o rent da conta de registro — sem custódia da
-    /// Niara no meio.
+    /// The signer pays the rent for the record account, with no Niara
+    /// custody in between.
     #[account(mut)]
     pub assinante: Signer<'info>,
 
-    /// `init` falha se o PDA já existir: um hash registrado nunca pode ser
-    /// sobrescrito nem "re-datado".
+    /// `init` fails if the PDA already exists: a registered hash can never be
+    /// overwritten or back-dated.
     #[account(
         init,
         payer = assinante,

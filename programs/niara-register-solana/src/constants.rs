@@ -1,14 +1,14 @@
 use anchor_lang::prelude::*;
 
-/// Semente do PDA de cada registro: ["assinatura", hash_sha256].
-/// Como o endereço do PDA é derivado do próprio hash, existe no máximo UMA
-/// conta por documento — é isso que garante o "registro único" (paridade com
-/// o `DocumentoJaRegistrado` do RegistroAssinaturas.sol na Sepolia).
+/// PDA seed of each record: ["assinatura", hash_sha256].
+/// Because the PDA address is derived from the hash itself, there is at most
+/// ONE account per document. That is what guarantees a single record per hash
+/// (parity with `DocumentoJaRegistrado` in RegistroAssinaturas.sol).
 #[constant]
 pub const ASSINATURA_SEED: &[u8] = b"assinatura";
 
-/// Limites em BYTES (UTF-8), não em caracteres. Mantêm o tamanho da conta
-/// fixo e o custo de rent previsível. (Sem #[constant]: o IDL não serializa usize.)
+/// Limits in BYTES (UTF-8), not characters. They keep the account size fixed
+/// and the rent cost predictable. (No #[constant]: the IDL does not serialize usize.)
 pub const MAX_NOME_DOCUMENTO: usize = 128;
 
 pub const MAX_TIPO_DOCUMENTO: usize = 32;
