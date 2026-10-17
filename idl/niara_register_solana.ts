@@ -16,8 +16,8 @@ export type NiaraRegisterSolana = {
     {
       "name": "registrar",
       "docs": [
-        "Registra a prova de existência de um documento pelo hash SHA-256.",
-        "O documento nunca é enviado: só o hash e um nome/tipo descritivos."
+        "Registers proof of existence of a document by its SHA-256 hash.",
+        "The document itself is never sent: only the hash and a descriptive name/type."
       ],
       "discriminator": [
         52,
@@ -33,8 +33,8 @@ export type NiaraRegisterSolana = {
         {
           "name": "assinante",
           "docs": [
-            "Quem assina é quem paga o rent da conta de registro — sem custódia da",
-            "Niara no meio."
+            "The signer pays the rent for the record account, with no Niara",
+            "custody in between."
           ],
           "writable": true,
           "signer": true
@@ -42,8 +42,8 @@ export type NiaraRegisterSolana = {
         {
           "name": "assinatura",
           "docs": [
-            "`init` falha se o PDA já existir: um hash registrado nunca pode ser",
-            "sobrescrito nem \"re-datado\"."
+            "`init` fails if the PDA already exists: a registered hash can never be",
+            "overwritten or back-dated."
           ],
           "writable": true,
           "pda": {
@@ -147,11 +147,11 @@ export type NiaraRegisterSolana = {
     {
       "name": "assinatura",
       "docs": [
-        "Prova de existência e autoria de um documento. Guarda só o hash SHA-256 —",
-        "o documento em si nunca vai para a blockchain (princípio \"seu ativo, enfim",
-        "seu\": o arquivo fica com o cliente).",
+        "Proof of existence and authorship of a document. Stores only the SHA-256",
+        "hash; the document itself never goes on-chain (\"your assets, truly yours\":",
+        "the file stays with the customer).",
         "",
-        "Registro probatório complementar: NÃO substitui cartório nem ICP-Brasil."
+        "Complementary evidentiary record: it does NOT replace a notary or ICP-Brasil."
       ],
       "type": {
         "kind": "struct",
@@ -159,14 +159,14 @@ export type NiaraRegisterSolana = {
           {
             "name": "assinante",
             "docs": [
-              "Carteira (autocustódia) que assinou a transação de registro."
+              "Self-custody wallet that signed the registration transaction."
             ],
             "type": "pubkey"
           },
           {
             "name": "hashDocumento",
             "docs": [
-              "Hash SHA-256 do documento, calculado no navegador do cliente."
+              "SHA-256 hash of the document, computed in the customer's browser."
             ],
             "type": {
               "array": [
@@ -178,14 +178,14 @@ export type NiaraRegisterSolana = {
           {
             "name": "timestamp",
             "docs": [
-              "Unix timestamp do cluster no momento do registro."
+              "Cluster Unix timestamp at registration time."
             ],
             "type": "i64"
           },
           {
             "name": "slot",
             "docs": [
-              "Slot em que o registro entrou — âncora extra de ordenação temporal."
+              "Slot in which the record landed: an extra anchor for time ordering."
             ],
             "type": "u64"
           },
@@ -207,8 +207,8 @@ export type NiaraRegisterSolana = {
     {
       "name": "documentoRegistrado",
       "docs": [
-        "Mesmo formato lógico do evento `DocumentoRegistrado` do contrato EVM, para",
-        "o indexer do Niara-Register tratar as duas redes com o mesmo schema."
+        "Same logical shape as the EVM contract's `DocumentoRegistrado` event, so the",
+        "Niara Register indexer can handle both networks with the same schema."
       ],
       "type": {
         "kind": "struct",
@@ -250,10 +250,10 @@ export type NiaraRegisterSolana = {
     {
       "name": "assinaturaSeed",
       "docs": [
-        "Semente do PDA de cada registro: [\"assinatura\", hash_sha256].",
-        "Como o endereço do PDA é derivado do próprio hash, existe no máximo UMA",
-        "conta por documento — é isso que garante o \"registro único\" (paridade com",
-        "o `DocumentoJaRegistrado` do RegistroAssinaturas.sol na Sepolia)."
+        "PDA seed of each record: [\"assinatura\", hash_sha256].",
+        "Because the PDA address is derived from the hash itself, there is at most",
+        "ONE account per document. That is what guarantees a single record per hash",
+        "(parity with `DocumentoJaRegistrado` in RegistroAssinaturas.sol)."
       ],
       "type": "bytes",
       "value": "[97, 115, 115, 105, 110, 97, 116, 117, 114, 97]"

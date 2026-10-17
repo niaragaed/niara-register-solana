@@ -1,8 +1,13 @@
-//! Niara-Register na Solana — prova de existência e autoria de documentos.
+//! Niara Register on Solana: proof of existence and authorship for documents.
 //!
-//! Port do `RegistroAssinaturas.sol` (Sepolia, niaragaed/niara-contracts-Register)
-//! com a mesma semântica: hash SHA-256 + assinante + timestamp + metadados,
-//! um registro por hash, imutável.
+//! Port of `RegistroAssinaturas.sol` (EVM, niaragaed/niara-contracts-Register)
+//! with the same semantics: SHA-256 hash + signer + timestamp + metadata,
+//! one immutable record per hash.
+//!
+//! Instruction, account, event, error and seed names stay in Portuguese
+//! because they are part of the deployed program's interface (discriminators
+//! and PDA seeds). Glossary: registrar = register, assinatura = signature,
+//! assinante = signer, documento = document, nome = name, tipo = type.
 pub mod constants;
 pub mod error;
 pub mod instructions;
@@ -20,8 +25,8 @@ declare_id!("9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR");
 pub mod niara_register_solana {
     use super::*;
 
-    /// Registra a prova de existência de um documento pelo hash SHA-256.
-    /// O documento nunca é enviado: só o hash e um nome/tipo descritivos.
+    /// Registers proof of existence of a document by its SHA-256 hash.
+    /// The document itself is never sent: only the hash and a descriptive name/type.
     pub fn registrar(
         ctx: Context<Registrar>,
         hash_documento: [u8; 32],
