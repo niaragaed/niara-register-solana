@@ -43,7 +43,9 @@ Tests: `bash scripts/fetch-fixtures.sh` once, then `anchor build --ignore-keys &
   [niaragaed/Niara-Register](https://github.com/niaragaed/Niara-Register) (`indexer/solana.ts`
   for Solana, `indexer/evm-assinaturas.ts` for the EVM networks).
 
-## How it works
+## How it works (v1, as deployed today)
+
+This section describes the program currently on devnet. After the v2 upgrade above, `registrar` no longer exists and new records go through `register_v2`.
 
 | | |
 |---|---|
@@ -69,14 +71,16 @@ duplicate hash fails with the System Program's "already in use".
 ## Run the tests
 
 ```bash
-anchor build
-solana-test-validator -r --bpf-program 9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR \
-  target/deploy/niara_register_solana.so &
-anchor test --skip-local-validator --skip-deploy --skip-build
+bash scripts/fetch-fixtures.sh          # once: Metaplex programs from devnet
+anchor build --ignore-keys
+bash scripts/test-local.sh
 ```
 
-7 tests: happy path + event, duplicate hash (also from another wallet), zero hash,
-name/type limits (including the exact 128-byte UTF-8 boundary), and signer-pays-rent.
+15 tests: receipt infrastructure (frozen collection held by the program PDA,
+admin-only config), `register_v2` (no readable metadata, the receipt leaf
+rebuilt and matched against the on-chain tree root, transfer refused even for
+the owner, duplicate/zero/unknown-scheme/foreign-tree rejection), and the full
+transferable-record life-cycle.
 
 ## Deploy to devnet
 
@@ -88,14 +92,14 @@ anchor deploy --provider.cluster devnet
 
 The program ID above requires `target/deploy/niara_register_solana-keypair.json`
 (kept out of git). Deploying with a new keypair: run `anchor keys sync`, rebuild,
-and update `ID_PROGRAMA_SOLANA` in the Niara-Register site
-(`lib/registro-solana.ts`).
+and update `SOLANA_PROGRAM_ID` in the Niara-Register site
+(`lib/register-solana.ts`).
 
 ## Web client
 
-The Niara-Register site (`/signatures`) talks to this program without the Anchor
-client: `lib/registro-solana.ts` encodes the instruction and decodes the account
-by hand (discriminators from `target/idl/niara_register_solana.json`), and the
+The Niara-Register site (`/signatures`, `/verify`, `/transferable`) talks to this
+program without the Anchor client: `lib/register-v2-solana.ts` encodes the
+instructions and decodes the accounts by hand (discriminators from `target/idl/niara_register_solana.json`), and the
 wallet (Phantom/Solflare) only signs — the transaction is sent through a devnet RPC.
 
 ## Known limitations
