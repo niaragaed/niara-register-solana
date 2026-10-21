@@ -14,6 +14,23 @@ they let Niara Register record and verify the same document on six networks.
 > Complementary evidentiary record. It does **not** replace a notary (cartório) or
 > ICP-Brasil and has no automatic legal effect.
 
+## v2 (needs a program upgrade)
+
+- **`register_v2`** stores the record hash, the hash scheme and a salted metadata commitment — no name or type — and mints a **soulbound compressed NFT receipt** (Metaplex Bubblegum v2) to the signer in the same transaction. Receipts live in an MPL-Core collection with `PermanentFreezeDelegate { frozen: true }` held by the program's `receipt_authority` PDA, so not even the owner can transfer them (the tests prove it with a valid Merkle proof). Wallets show them only through an RPC with the DAS API.
+- **`registrar` (v1) is removed**: it wrote the name and type in plain text. Old v1 accounts stay readable, and a hash with a v1 record cannot be registered again.
+- **Transferable records** (`issue_record`, `transfer_control`, `propose_amendment`, `cancel_amendment`, `accept_amendment`, `surrender`, `terminate`), designed to line up with MLETR. Aligned with MLETR, not "compliant": Brazil has not enacted it.
+
+After upgrading the program (`anchor build`, then `solana program deploy` with the upgrade-authority wallet), create the receipt tree and collection once:
+
+```bash
+ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
+ANCHOR_WALLET=<upgrade-authority keypair> \
+METADATA_BASE_URL=https://niara-register.vercel.app/api/receipts/solana/ \
+npx ts-node scripts/setup-receipts.ts
+```
+
+Tests: `bash scripts/fetch-fixtures.sh` once, then `anchor build --ignore-keys && bash scripts/test-local.sh` (local validator with the Metaplex programs loaded).
+
 ## Live on Solana devnet
 
 - Program: [`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`](https://explorer.solana.com/address/9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR?cluster=devnet)
