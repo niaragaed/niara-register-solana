@@ -110,10 +110,13 @@ export async function writeConfig(opts: {
   metadataBaseUrl: string;
 }): Promise<PublicKey> {
   const { program } = opts;
+  // Untyped on purpose: this helper takes any copy of the IDL, and the generic
+  // Anchor method types blow up the type checker ("excessively deep").
+  const methods = program.methods as any;
   const config = configPda(program.programId);
   const existing = await program.provider.connection.getAccountInfo(config);
   if (existing) {
-    await program.methods
+    await methods
       .updateConfig(opts.merkleTree, opts.coreCollection, opts.metadataBaseUrl)
       .accounts({ admin: opts.admin })
       .rpc();
@@ -122,7 +125,7 @@ export async function writeConfig(opts: {
       [program.programId.toBuffer()],
       new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
     )[0];
-    await program.methods
+    await methods
       .initializeConfig(opts.merkleTree, opts.coreCollection, opts.metadataBaseUrl)
       .accounts({ admin: opts.admin, programData })
       .rpc();

@@ -74,7 +74,7 @@ describe("niara-register v2 (Solana)", () => {
   async function registerV2(signer: Keypair, hash: Buffer, scheme: number, meta: number[]) {
     const sig = await program.methods
       .registerV2(arr(hash), scheme, meta)
-      .accounts({
+      .accountsPartial({
         signer: signer.publicKey,
         merkleTree,
         coreCollection,
@@ -122,7 +122,7 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .updateConfig(merkleTree, coreCollection, "https://evil.example/")
-          .accounts({ admin: intruder.publicKey })
+          .accountsPartial({ admin: intruder.publicKey })
           .signers([intruder])
           .rpc(),
         "NotUpgradeAuthority"
@@ -137,7 +137,7 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .initializeConfig(merkleTree, coreCollection, BASE_URL)
-          .accounts({ admin: admin.publicKey, programData })
+          .accountsPartial({ admin: admin.publicKey, programData })
           .rpc(),
         "already in use"
       );
@@ -254,7 +254,7 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .registerV2(arr(sha256("x " + Date.now())), 0, ZERO32)
-          .accounts({ signer: a.publicKey, merkleTree: Keypair.generate().publicKey, coreCollection })
+          .accountsPartial({ signer: a.publicKey, merkleTree: Keypair.generate().publicKey, coreCollection })
           .signers([a])
           .rpc(),
         "ConfigMismatch"
@@ -285,7 +285,7 @@ describe("niara-register v2 (Solana)", () => {
       record = etrPda(doc);
       await program.methods
         .issueRecord(arr(doc), ZERO32, alice.publicKey)
-        .accounts({ issuer: issuer.publicKey })
+        .accountsPartial({ issuer: issuer.publicKey })
         .signers([issuer])
         .rpc();
     });
@@ -299,7 +299,7 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .issueRecord(arr(doc), ZERO32, bob.publicKey)
-          .accounts({ issuer: bob.publicKey })
+          .accountsPartial({ issuer: bob.publicKey })
           .signers([bob])
           .rpc(),
         "already in use"
@@ -310,14 +310,14 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .transferControl(bob.publicKey)
-          .accounts({ controller: issuer.publicKey, record })
+          .accountsPartial({ controller: issuer.publicKey, record })
           .signers([issuer])
           .rpc(),
         "NotController"
       );
       await program.methods
         .transferControl(bob.publicKey)
-        .accounts({ controller: alice.publicKey, record })
+        .accountsPartial({ controller: alice.publicKey, record })
         .signers([alice])
         .rpc();
       assert.equal(
@@ -330,27 +330,27 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .proposeAmendment(arr(docV2), ZERO32)
-          .accounts({ issuer: alice.publicKey, record })
+          .accountsPartial({ issuer: alice.publicKey, record })
           .signers([alice])
           .rpc(),
         "NotIssuer"
       );
       await program.methods
         .proposeAmendment(arr(docV2), ZERO32)
-        .accounts({ issuer: issuer.publicKey, record })
+        .accountsPartial({ issuer: issuer.publicKey, record })
         .signers([issuer])
         .rpc();
       await expectError(
         program.methods
           .acceptAmendment(arr(sha256("other")))
-          .accounts({ controller: alice.publicKey, record })
+          .accountsPartial({ controller: alice.publicKey, record })
           .signers([alice])
           .rpc(),
         "AmendmentMismatch"
       );
       await program.methods
         .acceptAmendment(arr(docV2))
-        .accounts({ controller: alice.publicKey, record })
+        .accountsPartial({ controller: alice.publicKey, record })
         .signers([alice])
         .rpc();
       const r = await program.account.transferableRecord.fetch(record);
@@ -362,7 +362,7 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .issueRecord(arr(docV2), ZERO32, bob.publicKey)
-          .accounts({ issuer: bob.publicKey })
+          .accountsPartial({ issuer: bob.publicKey })
           .signers([bob])
           .rpc(),
         "already in use"
@@ -373,7 +373,7 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .proposeAmendment(arr(doc), ZERO32)
-          .accounts({ issuer: issuer.publicKey, record })
+          .accountsPartial({ issuer: issuer.publicKey, record })
           .signers([issuer])
           .rpc(),
         "HashAlreadyUsed"
@@ -383,14 +383,14 @@ describe("niara-register v2 (Solana)", () => {
     it("cancel clears the proposal", async () => {
       await program.methods
         .proposeAmendment(arr(docV2), ZERO32)
-        .accounts({ issuer: issuer.publicKey, record })
+        .accountsPartial({ issuer: issuer.publicKey, record })
         .signers([issuer])
         .rpc();
-      await program.methods.cancelAmendment().accounts({ issuer: issuer.publicKey, record }).signers([issuer]).rpc();
+      await program.methods.cancelAmendment().accountsPartial({ issuer: issuer.publicKey, record }).signers([issuer]).rpc();
       await expectError(
         program.methods
           .acceptAmendment(arr(docV2))
-          .accounts({ controller: alice.publicKey, record })
+          .accountsPartial({ controller: alice.publicKey, record })
           .signers([alice])
           .rpc(),
         "NoPendingAmendment"
@@ -400,14 +400,14 @@ describe("niara-register v2 (Solana)", () => {
     it("surrender hands control to the issuer and freezes the record; then terminate", async () => {
       await program.methods
         .transferControl(bob.publicKey)
-        .accounts({ controller: alice.publicKey, record })
+        .accountsPartial({ controller: alice.publicKey, record })
         .signers([alice])
         .rpc();
       await expectError(
-        program.methods.terminate(0).accounts({ issuer: issuer.publicKey, record }).signers([issuer]).rpc(),
+        program.methods.terminate(0).accountsPartial({ issuer: issuer.publicKey, record }).signers([issuer]).rpc(),
         "NotSurrendered"
       );
-      await program.methods.surrender().accounts({ controller: bob.publicKey, record }).signers([bob]).rpc();
+      await program.methods.surrender().accountsPartial({ controller: bob.publicKey, record }).signers([bob]).rpc();
 
       let r = await program.account.transferableRecord.fetch(record);
       assert.equal(r.status, 2);
@@ -416,16 +416,16 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(
         program.methods
           .transferControl(alice.publicKey)
-          .accounts({ controller: issuer.publicKey, record })
+          .accountsPartial({ controller: issuer.publicKey, record })
           .signers([issuer])
           .rpc(),
         "NotActive"
       );
       await expectError(
-        program.methods.terminate(3).accounts({ issuer: issuer.publicKey, record }).signers([issuer]).rpc(),
+        program.methods.terminate(3).accountsPartial({ issuer: issuer.publicKey, record }).signers([issuer]).rpc(),
         "UnknownTerminationReason"
       );
-      await program.methods.terminate(1).accounts({ issuer: issuer.publicKey, record }).signers([issuer]).rpc();
+      await program.methods.terminate(1).accountsPartial({ issuer: issuer.publicKey, record }).signers([issuer]).rpc();
       r = await program.account.transferableRecord.fetch(record);
       assert.equal(r.status, 3);
       assert.deepEqual(Buffer.from(r.documentHash), doc);
