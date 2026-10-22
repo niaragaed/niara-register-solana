@@ -16,7 +16,8 @@ import {
   fetchMerkleTree,
   getCurrentRoot,
 } from "@metaplex-foundation/mpl-account-compression";
-import { NiaraRegisterSolana } from "../target/types/niara_register_solana";
+// Committed types (idl/), so the tests type-check without an anchor build.
+import { NiaraRegisterSolana } from "../idl/niara_register_solana";
 import {
   createReceiptInfrastructure,
   umiFor,
