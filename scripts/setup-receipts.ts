@@ -17,7 +17,8 @@
 import * as anchor from "@anchor-lang/core";
 import { writeFileSync } from "fs";
 import { Keypair } from "@solana/web3.js";
-import idl from "../target/idl/niara_register_solana.json";
+// The committed IDL (idl/), so the setup does not need an anchor build.
+import idl from "../idl/niara_register_solana.json";
 import { createReceiptInfrastructure, umiFor, writeConfig } from "./receipts-setup-lib";
 
 async function main() {
