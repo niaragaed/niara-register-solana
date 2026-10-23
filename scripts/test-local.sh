@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs the program tests against a local validator that has the Metaplex
-# programs (Bubblegum, MPL-Core, noop, account compression) loaded from
-# tests/fixtures, and this program loaded as UPGRADEABLE at its real address
+# programs (Bubblegum, MPL-Core, noop, account compression) and Squads v4
+# loaded from tests/fixtures, and this program loaded as UPGRADEABLE at its real address
 # with the local wallet as upgrade authority (initialize_config checks it).
 #
 # Usage: bash scripts/fetch-fixtures.sh (once), then: anchor build --ignore-keys && bash scripts/test-local.sh
@@ -19,6 +19,8 @@ solana-test-validator --reset --quiet --ledger "$LEDGER" \
   --bpf-program CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d tests/fixtures/mpl_core.so \
   --bpf-program mnoopTCrg4p8ry25e4bcWA9XZjbNjMTfgYVGGEdRsf3 tests/fixtures/mpl_noop.so \
   --bpf-program mcmt6YrQEMKw8Mw43FmpRLmf7BqRnFMKmAcbxE3xkAW tests/fixtures/mpl_account_compression.so \
+  --bpf-program SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf tests/fixtures/squads_v4.so \
+  --account BSTq9w3kZwNwpBXJEvTZz2G9ZTNyKBvoSeXMvwb4cNZr tests/fixtures/squads_program_config.json \
   --upgradeable-program "$PROGRAM_ID" target/deploy/niara_register_solana.so "$WALLET" &
 VALIDATOR=$!
 trap 'kill $VALIDATOR 2>/dev/null; rm -rf "$LEDGER"' EXIT

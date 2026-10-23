@@ -47,7 +47,8 @@ pub mod niara_register_solana {
         )
     }
 
-    /// Points new receipts at another tree, collection or metadata URL.
+    /// Points new receipts at another tree, collection or metadata URL. Only the
+    /// program's current upgrade authority (e.g. the Squads vault) can call it.
     pub fn update_config(
         ctx: Context<UpdateConfig>,
         merkle_tree: Pubkey,

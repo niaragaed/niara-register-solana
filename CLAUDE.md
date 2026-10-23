@@ -25,8 +25,10 @@ New `ErrorCode` variants go at the end so existing codes do not move.
   hash recipes must stay byte-identical to `SignatureRegistryV2.sol` and to
   `lib/commitments.ts` in Niara-Register.
 - `initialize_config` / `update_config` set the tree, collection and receipt
-  metadata URL; only the program upgrade authority can call them. One-time
-  setup: `scripts/setup-receipts.ts`.
+  metadata URL; only the program's *current* upgrade authority can call them.
+  One-time setup: `scripts/setup-receipts.ts`. The upgrade authority moves to a
+  Squads v4 multisig (`scripts/squads/`, runbook in `docs/admin-keys.md`):
+  never hand it to a single key again.
 - Transferable records (`issue_record` … `terminate`) are designed to line up
   with MLETR. Describe them as "aligned with MLETR", never as "compliant":
   Brazil has not enacted MLETR.
