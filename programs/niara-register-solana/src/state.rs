@@ -42,6 +42,8 @@ pub struct DocumentoRegistrado {
 #[account]
 #[derive(InitSpace)]
 pub struct Config {
+    /// Who last set the config: the upgrade authority at that time (informative;
+    /// update_config checks the program's current upgrade authority).
     pub admin: Pubkey,
     /// Bubblegum V2 tree whose delegate is the receipt authority PDA.
     pub merkle_tree: Pubkey,

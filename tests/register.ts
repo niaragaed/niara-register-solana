@@ -19,6 +19,7 @@ import {
 // Committed types (idl/), so the tests type-check without an anchor build.
 import { NiaraRegisterSolana } from "../idl/niara_register_solana";
 import {
+  configPda,
   createReceiptInfrastructure,
   umiFor,
   writeConfig,
@@ -57,6 +58,23 @@ describe("niara-register v2 (Solana)", () => {
   let merkleTree: PublicKey;
   let coreCollection: PublicKey;
   let receiptAuthority: PublicKey;
+
+  const LOADER = new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111");
+  const programDataPda = () => PublicKey.findProgramAddressSync([program.programId.toBuffer()], LOADER)[0];
+
+  /** BPF upgradeable loader SetAuthority (instruction 4) on this program. */
+  async function setUpgradeAuthority(current: Keypair, next: PublicKey) {
+    const ix = new anchor.web3.TransactionInstruction({
+      programId: LOADER,
+      keys: [
+        { pubkey: programDataPda(), isSigner: false, isWritable: true },
+        { pubkey: current.publicKey, isSigner: true, isWritable: false },
+        { pubkey: next, isSigner: false, isWritable: false },
+      ],
+      data: Buffer.from([4, 0, 0, 0]),
+    });
+    await anchor.web3.sendAndConfirmTransaction(provider.connection, new anchor.web3.Transaction().add(ix), [current]);
+  }
 
   async function fundedWallet() {
     const kp = Keypair.generate();
@@ -118,16 +136,44 @@ describe("niara-register v2 (Solana)", () => {
       assert.isDefined(collection.bubblegumV2);
     });
 
-    it("only the admin can update the config", async () => {
+    it("only the upgrade authority can update the config", async () => {
       const intruder = await fundedWallet();
       await expectError(
         program.methods
           .updateConfig(merkleTree, coreCollection, "https://evil.example/")
-          .accountsPartial({ admin: intruder.publicKey })
+          .accountsPartial({ admin: intruder.publicKey, programData: programDataPda() })
           .signers([intruder])
           .rpc(),
         "NotUpgradeAuthority"
       );
+    });
+
+    it("update_config follows the upgrade authority when it moves (e.g. to a multisig)", async () => {
+      const newAuthority = await fundedWallet();
+      await setUpgradeAuthority(admin, newAuthority.publicKey);
+      try {
+        // The account that initialized the config has no say any more.
+        await expectError(
+          program.methods
+            .updateConfig(merkleTree, coreCollection, BASE_URL)
+            .accountsPartial({ admin: admin.publicKey, programData: programDataPda() })
+            .rpc(),
+          "NotUpgradeAuthority"
+        );
+        await program.methods
+          .updateConfig(merkleTree, coreCollection, BASE_URL)
+          .accountsPartial({ admin: newAuthority.publicKey, programData: programDataPda() })
+          .signers([newAuthority])
+          .rpc();
+        const cfg = await program.account.config.fetch(configPda(program.programId));
+        assert.equal(cfg.admin.toBase58(), newAuthority.publicKey.toBase58());
+      } finally {
+        await setUpgradeAuthority(newAuthority, admin.publicKey);
+        await program.methods
+          .updateConfig(merkleTree, coreCollection, BASE_URL)
+          .accountsPartial({ admin: admin.publicKey, programData: programDataPda() })
+          .rpc();
+      }
     });
 
     it("initialize_config cannot run twice", async () => {

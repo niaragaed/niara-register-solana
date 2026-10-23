@@ -29,12 +29,13 @@ METADATA_BASE_URL=https://niara-register.vercel.app/api/receipts/solana/ \
 npx ts-node scripts/setup-receipts.ts
 ```
 
-Tests: `bash scripts/fetch-fixtures.sh` once, then `anchor build --ignore-keys && bash scripts/test-local.sh` (local validator with the Metaplex programs loaded).
+Tests: `bash scripts/fetch-fixtures.sh` once, then `anchor build --ignore-keys && bash scripts/test-local.sh` (local validator with the Metaplex programs and Squads v4 loaded).
 
 ## Live on Solana devnet
 
 - Program: [`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`](https://explorer.solana.com/address/9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR?cluster=devnet)
-  — deployed at slot 509235352, upgrade authority held by the Niara deployer wallet
+  — deployed at slot 509235352, upgrade authority held by the Niara deployer wallet, moving to a
+  Squads multisig (2 of 3 Ledgers, time lock): see [docs/admin-keys.md](docs/admin-keys.md)
 - First real registration: [`4eFgDjZ6…cQBj`](https://explorer.solana.com/tx/4eFgDjZ6dzJzraZHGEoqxawxGaynttCUUUeUQkAtbCRnin9j6pMzMUEyB72Tmqyfa5YkbA6CA5CJYQ6jVjNMcQBj?cluster=devnet)
 - Web app: [niara-register.vercel.app/signatures](https://niara-register.vercel.app/signatures). Pick
   **Solana Devnet**, drop a file, and sign with Phantom or Solflare. The ledger below the form
@@ -76,11 +77,13 @@ anchor build --ignore-keys
 bash scripts/test-local.sh
 ```
 
-15 tests: receipt infrastructure (frozen collection held by the program PDA,
-admin-only config), `register_v2` (no readable metadata, the receipt leaf
+22 tests: receipt infrastructure (frozen collection held by the program PDA,
+config changes only by the current upgrade authority), `register_v2` (no readable metadata, the receipt leaf
 rebuilt and matched against the on-chain tree root, transfer refused even for
-the owner, duplicate/zero/unknown-scheme/foreign-tree rejection), and the full
-transferable-record life-cycle.
+the owner, duplicate/zero/unknown-scheme/foreign-tree rejection), the full
+transferable-record life-cycle, and a rehearsal of the Squads multisig admin
+(`tests/squads.ts`, with the real Squads v4 program: hand-over, upgrade and
+config change only after 2 approvals and the time lock).
 
 ## Deploy to devnet
 

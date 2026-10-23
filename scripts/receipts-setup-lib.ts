@@ -115,16 +115,16 @@ export async function writeConfig(opts: {
   const methods = program.methods as any;
   const config = configPda(program.programId);
   const existing = await program.provider.connection.getAccountInfo(config);
+  const programData = PublicKey.findProgramAddressSync(
+    [program.programId.toBuffer()],
+    new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
+  )[0];
   if (existing) {
     await methods
       .updateConfig(opts.merkleTree, opts.coreCollection, opts.metadataBaseUrl)
-      .accounts({ admin: opts.admin })
+      .accounts({ admin: opts.admin, programData })
       .rpc();
   } else {
-    const programData = PublicKey.findProgramAddressSync(
-      [program.programId.toBuffer()],
-      new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111")
-    )[0];
     await methods
       .initializeConfig(opts.merkleTree, opts.coreCollection, opts.metadataBaseUrl)
       .accounts({ admin: opts.admin, programData })

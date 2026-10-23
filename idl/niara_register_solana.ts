@@ -765,7 +765,8 @@ export type NiaraRegisterSolana = {
     {
       "name": "updateConfig",
       "docs": [
-        "Points new receipts at another tree, collection or metadata URL."
+        "Points new receipts at another tree, collection or metadata URL. Only the",
+        "program's current upgrade authority (e.g. the Squads vault) can call it."
       ],
       "discriminator": [
         29,
@@ -780,10 +781,7 @@ export type NiaraRegisterSolana = {
       "accounts": [
         {
           "name": "admin",
-          "signer": true,
-          "relations": [
-            "config"
-          ]
+          "signer": true
         },
         {
           "name": "config",
@@ -803,6 +801,13 @@ export type NiaraRegisterSolana = {
               }
             ]
           }
+        },
+        {
+          "name": "program",
+          "address": "9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR"
+        },
+        {
+          "name": "programData"
         }
       ],
       "args": [
@@ -1144,6 +1149,10 @@ export type NiaraRegisterSolana = {
         "fields": [
           {
             "name": "admin",
+            "docs": [
+              "Who last set the config: the upgrade authority at that time (informative;",
+              "update_config checks the program's current upgrade authority)."
+            ],
             "type": "pubkey"
           },
           {

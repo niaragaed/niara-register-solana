@@ -13,4 +13,7 @@ test-ledger
 
 # Metaplex program dumps for local tests (scripts/fetch-fixtures.sh)
 tests/fixtures/*.so
+tests/fixtures/*.json
+# Squads multisig created by scripts/squads/squads.ts on the local validator
+squads.local.json
 receipts-config.local.json
