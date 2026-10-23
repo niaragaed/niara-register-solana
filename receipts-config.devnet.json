@@ -1,0 +1,9 @@
+{
+  "cluster": "devnet",
+  "programId": "9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR",
+  "config": "FBqT9ur4YbEtZtjHnZJxFYwtRGDni2MESmCFSGe6eBcW",
+  "receiptAuthority": "4LtNBpLPZM9XcSAJsVdazevYCrQe8uZJQxD2MUWSyqdd",
+  "merkleTree": "4jbkoGJ8RNmSZ1jbZ7Fb49c7YhPBPSCdh2fGwgNCV47X",
+  "coreCollection": "6noXFL6H6qaSMj2ufdnN4Ta3b9EGGBC2RBrW2t4whKDM",
+  "metadataBaseUrl": "https://niara-register.vercel.app/api/receipts/solana/"
+}
