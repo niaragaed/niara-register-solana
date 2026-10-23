@@ -10,3 +10,7 @@ test-ledger
 # local Claude Code state; only the shared settings are versioned
 /.claude/*
 !/.claude/settings.json
+
+# Metaplex program dumps for local tests (scripts/fetch-fixtures.sh)
+tests/fixtures/*.so
+receipts-config.local.json

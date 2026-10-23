@@ -6,15 +6,36 @@ English is the default for everything in this repository: code, identifiers,
 comments, docs, test names, scripts and commit messages.
 
 Exception: names that are part of the deployed program's interface stay as they
-are. That covers the instruction `registrar`, the `Registrar` accounts struct,
-the `Assinatura` account and its fields, the `DocumentoRegistrado` event, the
-`ErrorCode` variants and their messages, and the PDA seed `"assinatura"`.
-Renaming any of them changes discriminators, seeds or the IDL of the program
-live on devnet (`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`). New programs
-and instructions should use English names from the start.
+are: the `Assinatura` account and its fields, the `DocumentoRegistrado` event,
+the first three `ErrorCode` variants and their messages, and the PDA seed
+`"assinatura"`. Renaming any of them changes discriminators, seeds or error
+codes of the program live on devnet (`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`).
+New `ErrorCode` variants go at the end so existing codes do not move.
+
+## Program layout
+
+- v1 (`registrar`) was **removed**: it wrote the document name and type in
+  plain text. v1 accounts stay on-chain and readable (decoded by hand in the
+  site and the indexer), and `register_v2` refuses a hash that has a v1 record.
+- `register_v2` stores only the record hash, the hash scheme, a public
+  document type code (fixed list, never free text) and a salted metadata commitment, and mints a soulbound cNFT receipt (Bubblegum v2) to the
+  signer in the same transaction. The collection is MPL-Core with
+  `PermanentFreezeDelegate { frozen: true }` held by the `receipt_authority`
+  PDA, so every receipt is non-transferable from the moment it is minted. The
+  hash recipes must stay byte-identical to `SignatureRegistryV2.sol` and to
+  `lib/commitments.ts` in Niara-Register.
+- `initialize_config` / `update_config` set the tree, collection and receipt
+  metadata URL; only the program upgrade authority can call them. One-time
+  setup: `scripts/setup-receipts.ts`.
+- Transferable records (`issue_record` … `terminate`) are designed to line up
+  with MLETR. Describe them as "aligned with MLETR", never as "compliant":
+  Brazil has not enacted MLETR.
+
+Tests: `bash scripts/fetch-fixtures.sh` once, then
+`anchor build --ignore-keys && bash scripts/test-local.sh`.
 
 If you change `///` doc comments in `programs/`, regenerate the IDL
-(`anchor build`) or update `idl/` by hand so the docs stay in sync.
+(`anchor build`) and copy `target/idl` and `target/types` into `idl/`.
 
 ## No AI attribution (hard rule)
 
