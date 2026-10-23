@@ -63,17 +63,20 @@ pub mod niara_register_solana {
     }
 
     /// Registers a document fingerprint and mints a soulbound cNFT receipt
-    /// to the signer. No document name or type goes on-chain.
+    /// to the signer. The document name never goes on-chain; the type goes
+    /// as a public code from a fixed list.
     pub fn register_v2(
         ctx: Context<RegisterV2>,
         record_hash: [u8; 32],
         scheme: u8,
+        document_type: u16,
         metadata_commitment: [u8; 32],
     ) -> Result<()> {
         crate::instructions::register_v2::handle_register_v2(
             ctx,
             record_hash,
             scheme,
+            document_type,
             metadata_commitment,
         )
     }

@@ -44,4 +44,6 @@ pub enum ErrorCode {
     HashAlreadyUsed,
     #[msg("Unknown termination reason")]
     UnknownTerminationReason,
+    #[msg("Document type must not be 0")]
+    InvalidDocumentType,
 }

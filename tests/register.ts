@@ -72,9 +72,9 @@ describe("niara-register v2 (Solana)", () => {
 
   // Waits for "confirmed": the Metaplex (umi) reads below use that commitment,
   // and Anchor's rpc() returns as soon as the transaction is "processed".
-  async function registerV2(signer: Keypair, hash: Buffer, scheme: number, meta: number[]) {
+  async function registerV2(signer: Keypair, hash: Buffer, scheme: number, meta: number[], docType = 1) {
     const sig = await program.methods
-      .registerV2(arr(hash), scheme, meta)
+      .registerV2(arr(hash), scheme, docType, meta)
       .accountsPartial({
         signer: signer.publicKey,
         merkleTree,
@@ -158,6 +158,7 @@ describe("niara-register v2 (Solana)", () => {
       assert.equal(rec.signer.toBase58(), signer.publicKey.toBase58());
       assert.deepEqual(Buffer.from(rec.recordHash), fileHash);
       assert.equal(rec.scheme, 0);
+      assert.equal(rec.documentType, 1);
       assert.deepEqual(Buffer.from(rec.metadataCommitment), meta);
       assert.equal(rec.receiptTree.toBase58(), merkleTree.toBase58());
       assert.equal(rec.receiptNonce.toNumber(), 0);
@@ -226,13 +227,14 @@ describe("niara-register v2 (Solana)", () => {
       const listener = program.addEventListener("documentRegisteredV2", (e) => {
         event = e;
       });
-      await registerV2(signer, hash, 1, ZERO32);
+      await registerV2(signer, hash, 1, ZERO32, 9);
       for (let i = 0; i < 20 && !event; i++) await new Promise((r) => setTimeout(r, 200));
       await program.removeEventListener(listener);
       assert.isNotNull(event);
       assert.deepEqual(Buffer.from(event.recordHash), hash);
       assert.equal(event.signer.toBase58(), signer.publicKey.toBase58());
       assert.equal(event.scheme, 1);
+      assert.equal(event.documentType, 9);
       assert.deepEqual(event.metadataCommitment, ZERO32);
     });
 
@@ -244,17 +246,18 @@ describe("niara-register v2 (Solana)", () => {
       await expectError(registerV2(b, hash, 1, ZERO32), "already in use");
     });
 
-    it("rejects a zero hash and unknown schemes", async () => {
+    it("rejects a zero hash, unknown schemes and document type 0", async () => {
       const a = await fundedWallet();
       await expectError(registerV2(a, Buffer.alloc(32), 0, ZERO32), "HashInvalido");
       await expectError(registerV2(a, sha256("s " + Date.now()), 2, ZERO32), "UnknownScheme");
+      await expectError(registerV2(a, sha256("t " + Date.now()), 0, ZERO32, 0), "InvalidDocumentType");
     });
 
     it("rejects a tree or collection other than the configured ones", async () => {
       const a = await fundedWallet();
       await expectError(
         program.methods
-          .registerV2(arr(sha256("x " + Date.now())), 0, ZERO32)
+          .registerV2(arr(sha256("x " + Date.now())), 0, 1, ZERO32)
           .accountsPartial({ signer: a.publicKey, merkleTree: Keypair.generate().publicKey, coreCollection })
           .signers([a])
           .rpc(),

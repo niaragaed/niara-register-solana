@@ -100,10 +100,12 @@ pub fn handle_register_v2(
     ctx: Context<RegisterV2>,
     record_hash: [u8; 32],
     scheme: u8,
+    document_type: u16,
     metadata_commitment: [u8; 32],
 ) -> Result<()> {
     require!(record_hash != [0u8; 32], ErrorCode::HashInvalido);
     require!(scheme <= SCHEME_SALTED_SHA256, ErrorCode::UnknownScheme);
+    require!(document_type != 0, ErrorCode::InvalidDocumentType);
 
     // Parity with "one record per hash": a v1 record for the same hash blocks v2.
     // Only the data matters; anyone can send lamports to an address.
@@ -169,6 +171,7 @@ pub fn handle_register_v2(
     record.signer = ctx.accounts.signer.key();
     record.record_hash = record_hash;
     record.scheme = scheme;
+    record.document_type = document_type;
     record.metadata_commitment = metadata_commitment;
     record.timestamp = clock.unix_timestamp;
     record.slot = clock.slot;
@@ -181,6 +184,7 @@ pub fn handle_register_v2(
         record_hash,
         signer: record.signer,
         scheme,
+        document_type,
         metadata_commitment,
         timestamp: record.timestamp,
         slot: record.slot,

@@ -17,8 +17,8 @@ New `ErrorCode` variants go at the end so existing codes do not move.
 - v1 (`registrar`) was **removed**: it wrote the document name and type in
   plain text. v1 accounts stay on-chain and readable (decoded by hand in the
   site and the indexer), and `register_v2` refuses a hash that has a v1 record.
-- `register_v2` stores only the record hash, the hash scheme and a salted
-  metadata commitment, and mints a soulbound cNFT receipt (Bubblegum v2) to the
+- `register_v2` stores only the record hash, the hash scheme, a public
+  document type code (fixed list, never free text) and a salted metadata commitment, and mints a soulbound cNFT receipt (Bubblegum v2) to the
   signer in the same transaction. The collection is MPL-Core with
   `PermanentFreezeDelegate { frozen: true }` held by the `receipt_authority`
   PDA, so every receipt is non-transferable from the moment it is minted. The

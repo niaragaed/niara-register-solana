@@ -350,7 +350,8 @@
       "name": "register_v2",
       "docs": [
         "Registers a document fingerprint and mints a soulbound cNFT receipt",
-        "to the signer. No document name or type goes on-chain."
+        "to the signer. The document name never goes on-chain; the type goes",
+        "as a public code from a fixed list."
       ],
       "discriminator": [
         225,
@@ -639,6 +640,10 @@
         {
           "name": "scheme",
           "type": "u8"
+        },
+        {
+          "name": "document_type",
+          "type": "u16"
         },
         {
           "name": "metadata_commitment",
@@ -1073,6 +1078,11 @@
       "code": 6017,
       "name": "UnknownTerminationReason",
       "msg": "Unknown termination reason"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidDocumentType",
+      "msg": "Document type must not be 0"
     }
   ],
   "types": [
@@ -1205,6 +1215,10 @@
           {
             "name": "scheme",
             "type": "u8"
+          },
+          {
+            "name": "document_type",
+            "type": "u16"
           },
           {
             "name": "metadata_commitment",
@@ -1398,6 +1412,14 @@
           {
             "name": "scheme",
             "type": "u8"
+          },
+          {
+            "name": "document_type",
+            "docs": [
+              "Public document type code from a fixed list (never free text); 0 is invalid.",
+              "Same codes as SignatureRegistryV2.sol (1 contract … 11 other)."
+            ],
+            "type": "u16"
           },
           {
             "name": "metadata_commitment",

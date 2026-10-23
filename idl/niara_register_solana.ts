@@ -356,7 +356,8 @@ export type NiaraRegisterSolana = {
       "name": "registerV2",
       "docs": [
         "Registers a document fingerprint and mints a soulbound cNFT receipt",
-        "to the signer. No document name or type goes on-chain."
+        "to the signer. The document name never goes on-chain; the type goes",
+        "as a public code from a fixed list."
       ],
       "discriminator": [
         225,
@@ -645,6 +646,10 @@ export type NiaraRegisterSolana = {
         {
           "name": "scheme",
           "type": "u8"
+        },
+        {
+          "name": "documentType",
+          "type": "u16"
         },
         {
           "name": "metadataCommitment",
@@ -1079,6 +1084,11 @@ export type NiaraRegisterSolana = {
       "code": 6017,
       "name": "unknownTerminationReason",
       "msg": "Unknown termination reason"
+    },
+    {
+      "code": 6018,
+      "name": "invalidDocumentType",
+      "msg": "Document type must not be 0"
     }
   ],
   "types": [
@@ -1211,6 +1221,10 @@ export type NiaraRegisterSolana = {
           {
             "name": "scheme",
             "type": "u8"
+          },
+          {
+            "name": "documentType",
+            "type": "u16"
           },
           {
             "name": "metadataCommitment",
@@ -1404,6 +1418,14 @@ export type NiaraRegisterSolana = {
           {
             "name": "scheme",
             "type": "u8"
+          },
+          {
+            "name": "documentType",
+            "docs": [
+              "Public document type code from a fixed list (never free text); 0 is invalid.",
+              "Same codes as SignatureRegistryV2.sol (1 contract … 11 other)."
+            ],
+            "type": "u16"
           },
           {
             "name": "metadataCommitment",

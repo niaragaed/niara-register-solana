@@ -63,6 +63,9 @@ pub struct RecordV2 {
     pub signer: Pubkey,
     pub record_hash: [u8; 32],
     pub scheme: u8,
+    /// Public document type code from a fixed list (never free text); 0 is invalid.
+    /// Same codes as SignatureRegistryV2.sol (1 contract … 11 other).
+    pub document_type: u16,
     /// SHA-256("niara-meta-v1" || salt || metadata JSON), or all zeros.
     pub metadata_commitment: [u8; 32],
     pub timestamp: i64,
@@ -79,6 +82,7 @@ pub struct DocumentRegisteredV2 {
     pub record_hash: [u8; 32],
     pub signer: Pubkey,
     pub scheme: u8,
+    pub document_type: u16,
     pub metadata_commitment: [u8; 32],
     pub timestamp: i64,
     pub slot: u64,
