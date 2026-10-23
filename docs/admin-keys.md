@@ -93,6 +93,10 @@ Solana and Squads CLIs natively for the Ledger steps.
    squads-multisig-cli proposal-vote --rpc-url https://api.devnet.solana.com \
      --keypair usb://ledger --multisig-pubkey <MULTISIG> --transaction-index <N> --action Approve
    ```
+   It shows the multisig and index and asks for confirmation; then the
+   Ledger asks to approve the transaction. It reads the chain at
+   "finalized", so wait ~15 s after a proposal is created before voting.
+   (Rehearsed on a local validator with a file keypair in place of the Ledger.)
 5. After the time lock: `PAYER=<proposer.json> INDEX=<N> npx ts-node scripts/squads/squads.ts execute`
    (or `squads-multisig-cli vault-transaction-execute … --keypair usb://ledger`).
 
