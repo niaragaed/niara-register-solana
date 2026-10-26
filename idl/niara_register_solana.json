@@ -108,6 +108,143 @@
       "args": []
     },
     {
+      "name": "cancel_commitment",
+      "docs": [
+        "Closes the signer's pending commitment and returns its rent."
+      ],
+      "discriminator": [
+        36,
+        39,
+        70,
+        137,
+        71,
+        179,
+        88,
+        232
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "pending"
+          ]
+        },
+        {
+          "name": "pending",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "arg",
+                "path": "commitment"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "commit",
+      "docs": [
+        "Commit step of commit-reveal (see `instructions/commit.rs`)."
+      ],
+      "discriminator": [
+        223,
+        140,
+        142,
+        165,
+        229,
+        208,
+        156,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pending",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "arg",
+                "path": "commitment"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "initialize_config",
       "docs": [
         "Creates the receipt configuration. Program upgrade authority only."
@@ -171,6 +308,69 @@
         {
           "name": "metadata_base_url",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "initialize_orb_config",
+      "docs": [
+        "Creates the ORB config with its attester key. Program upgrade authority only."
+      ],
+      "discriminator": [
+        62,
+        203,
+        98,
+        7,
+        85,
+        252,
+        108,
+        14
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "orb_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  98,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "attester",
+          "type": "pubkey"
         }
       ]
     },
@@ -347,21 +547,22 @@
       ]
     },
     {
-      "name": "register_v2",
+      "name": "register_v3",
       "docs": [
-        "Registers a document fingerprint and mints a soulbound cNFT receipt",
-        "to the signer. The document name never goes on-chain; the type goes",
-        "as a public code from a fixed list."
+        "Reveal step: registers a committed document fingerprint and mints a",
+        "soulbound cNFT receipt to the signer. With a non-zero",
+        "`orb_report_hash`, the previous instruction must be the ORB attester's",
+        "Ed25519 signature (see `instructions/orb.rs`)."
       ],
       "discriminator": [
+        158,
+        43,
+        192,
+        255,
         225,
-        250,
-        193,
-        26,
-        37,
-        179,
-        205,
-        76
+        42,
+        188,
+        131
       ],
       "accounts": [
         {
@@ -371,7 +572,21 @@
             "the receipt. No Niara custody in between."
           ],
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "commitment"
+          ]
+        },
+        {
+          "name": "commitment",
+          "docs": [
+            "The signer's own commitment to (record_hash, nonce). Its address is",
+            "derived from the signer, so a copy of this transaction sent by someone",
+            "else points at an account that does not exist. The address is checked",
+            "in the handler (the seed is a hash of the arguments, which the IDL",
+            "cannot express). Closed here."
+          ],
+          "writable": true
         },
         {
           "name": "config",
@@ -397,6 +612,31 @@
             "`init` fails if the PDA already exists: one record per hash, forever."
           ],
           "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  99,
+                  111,
+                  114,
+                  100,
+                  95,
+                  118,
+                  51
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "record_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "record_v2",
           "pda": {
             "seeds": [
               {
@@ -445,6 +685,36 @@
               }
             ]
           }
+        },
+        {
+          "name": "orb_config",
+          "docs": [
+            "Needed only with an ORB attestation."
+          ],
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  98,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "instructions_sysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
         },
         {
           "name": "receipt_authority",
@@ -653,6 +923,83 @@
               32
             ]
           }
+        },
+        {
+          "name": "nonce",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "orb_report_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_orb_attester",
+      "docs": [
+        "Changes the ORB attester (current attester or upgrade authority).",
+        "Pubkey::default() turns ORB off."
+      ],
+      "discriminator": [
+        196,
+        154,
+        120,
+        96,
+        145,
+        230,
+        183,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "orb_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  98,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR"
+        },
+        {
+          "name": "program_data"
+        }
+      ],
+      "args": [
+        {
+          "name": "attester",
+          "type": "pubkey"
         }
       ]
     },
@@ -822,6 +1169,19 @@
   ],
   "accounts": [
     {
+      "name": "Commitment",
+      "discriminator": [
+        61,
+        112,
+        129,
+        128,
+        24,
+        147,
+        77,
+        87
+      ]
+    },
+    {
       "name": "Config",
       "discriminator": [
         155,
@@ -835,16 +1195,29 @@
       ]
     },
     {
-      "name": "RecordV2",
+      "name": "OrbConfig",
       "discriminator": [
-        255,
-        235,
-        84,
-        155,
-        197,
-        94,
+        123,
+        57,
+        207,
+        203,
+        245,
+        191,
+        102,
+        52
+      ]
+    },
+    {
+      "name": "RecordV3",
+      "discriminator": [
+        219,
+        193,
+        191,
+        49,
         92,
-        26
+        106,
+        138,
+        205
       ]
     },
     {
@@ -902,6 +1275,19 @@
       ]
     },
     {
+      "name": "Committed",
+      "discriminator": [
+        70,
+        158,
+        162,
+        86,
+        29,
+        111,
+        143,
+        226
+      ]
+    },
+    {
       "name": "ControlTransferred",
       "discriminator": [
         107,
@@ -928,6 +1314,19 @@
       ]
     },
     {
+      "name": "DocumentRegisteredV3",
+      "discriminator": [
+        39,
+        180,
+        202,
+        184,
+        125,
+        217,
+        187,
+        244
+      ]
+    },
+    {
       "name": "DocumentoRegistrado",
       "discriminator": [
         206,
@@ -938,6 +1337,19 @@
         52,
         33,
         1
+      ]
+    },
+    {
+      "name": "OrbAttesterChanged",
+      "discriminator": [
+        42,
+        250,
+        173,
+        254,
+        53,
+        23,
+        40,
+        251
       ]
     },
     {
@@ -1088,6 +1500,46 @@
       "code": 6018,
       "name": "InvalidDocumentType",
       "msg": "Document type must not be 0"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidCommitment",
+      "msg": "Commitment must not be all zeros"
+    },
+    {
+      "code": 6020,
+      "name": "RevealTooEarly",
+      "msg": "The commitment must be revealed in a later slot"
+    },
+    {
+      "code": 6021,
+      "name": "CommitmentExpired",
+      "msg": "The commitment expired; commit again"
+    },
+    {
+      "code": 6022,
+      "name": "AlreadyRegisteredV2",
+      "msg": "This hash already has a v2 record"
+    },
+    {
+      "code": 6023,
+      "name": "OrbDisabled",
+      "msg": "ORB attestation is not enabled"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidOrbAttestation",
+      "msg": "Missing or invalid ORB attestation"
+    },
+    {
+      "code": 6025,
+      "name": "NotOrbAuthority",
+      "msg": "Only the ORB attester or the program upgrade authority can do this"
+    },
+    {
+      "code": 6026,
+      "name": "CommitmentMismatch",
+      "msg": "The commitment account does not match this signer, hash and nonce"
     }
   ],
   "types": [
@@ -1129,6 +1581,59 @@
                 32
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Commitment",
+      "docs": [
+        "A commitment to a record hash, made before revealing it. Closed (rent back",
+        "to the signer) by register_v3 or cancel_commitment."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Committed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "slot",
+            "type": "u64"
           }
         ]
       }
@@ -1254,6 +1759,65 @@
       }
     },
     {
+      "name": "DocumentRegisteredV3",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "record_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "scheme",
+            "type": "u8"
+          },
+          {
+            "name": "document_type",
+            "type": "u16"
+          },
+          {
+            "name": "metadata_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "orb_report_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "receipt_asset_id",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "DocumentoRegistrado",
       "docs": [
         "v1 event, kept in the IDL so past transactions stay decodable. No longer emitted."
@@ -1289,6 +1853,41 @@
           {
             "name": "slot",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrbAttesterChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "previous",
+            "type": "pubkey"
+          },
+          {
+            "name": "attester",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrbConfig",
+      "docs": [
+        "Who may sign ORB attestations. Pubkey::default() means ORB is off."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "attester",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
@@ -1398,9 +1997,9 @@
       }
     },
     {
-      "name": "RecordV2",
+      "name": "RecordV3",
       "docs": [
-        "Privacy-preserving proof of existence. No readable metadata."
+        "v2 record plus the ORB report hash. Registered through commit-reveal."
       ],
       "type": {
         "kind": "struct",
@@ -1424,16 +2023,21 @@
           },
           {
             "name": "document_type",
-            "docs": [
-              "Public document type code from a fixed list (never free text); 0 is invalid.",
-              "Same codes as SignatureRegistryV2.sol (1 contract … 11 other)."
-            ],
             "type": "u16"
           },
           {
             "name": "metadata_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "orb_report_hash",
             "docs": [
-              "SHA-256(\"niara-meta-v1\" || salt || metadata JSON), or all zeros."
+              "Hash of the ORB analysis report attested by the ORB key; all zeros if none."
             ],
             "type": {
               "array": [
@@ -1452,9 +2056,6 @@
           },
           {
             "name": "receipt_asset_id",
-            "docs": [
-              "Compressed NFT receipt minted to `signer` in the same transaction."
-            ],
             "type": "pubkey"
           },
           {
@@ -1594,6 +2195,31 @@
       "value": "[97, 115, 115, 105, 110, 97, 116, 117, 114, 97]"
     },
     {
+      "name": "COMMITMENT_SEED",
+      "docs": [
+        "Pending commitment: [\"commitment\", signer, commitment]."
+      ],
+      "type": "bytes",
+      "value": "[99, 111, 109, 109, 105, 116, 109, 101, 110, 116]"
+    },
+    {
+      "name": "COMMITMENT_TTL_SECONDS",
+      "docs": [
+        "A commitment can be revealed for this long (and only in a later slot)."
+      ],
+      "type": "i64",
+      "value": "86400"
+    },
+    {
+      "name": "COMMIT_DOMAIN",
+      "docs": [
+        "commitment = SHA-256(\"niara-commit-v1\" || program_id || signer || record_hash || nonce).",
+        "Must match the site's lib/commit-reveal.ts."
+      ],
+      "type": "bytes",
+      "value": "[110, 105, 97, 114, 97, 45, 99, 111, 109, 109, 105, 116, 45, 118, 49]"
+    },
+    {
       "name": "CONFIG_SEED",
       "docs": [
         "Singleton configuration: [\"config\"]."
@@ -1619,6 +2245,23 @@
       "value": "[101, 116, 114]"
     },
     {
+      "name": "ORB_CONFIG_SEED",
+      "docs": [
+        "ORB attester settings: [\"orb_config\"]."
+      ],
+      "type": "bytes",
+      "value": "[111, 114, 98, 95, 99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "ORB_DOMAIN",
+      "docs": [
+        "The ORB attester signs, with Ed25519, the 32-byte",
+        "SHA-256(\"niara-orb-v1\" || program_id || record_hash || report_hash || signer)."
+      ],
+      "type": "bytes",
+      "value": "[110, 105, 97, 114, 97, 45, 111, 114, 98, 45, 118, 49]"
+    },
+    {
       "name": "RECEIPT_AUTHORITY_SEED",
       "docs": [
         "PDA that is the tree delegate, the collection update authority and the",
@@ -1634,6 +2277,14 @@
       ],
       "type": "bytes",
       "value": "[114, 101, 99, 111, 114, 100, 95, 118, 50]"
+    },
+    {
+      "name": "RECORD_V3_SEED",
+      "docs": [
+        "v3 record: [\"record_v3\", record_hash]."
+      ],
+      "type": "bytes",
+      "value": "[114, 101, 99, 111, 114, 100, 95, 118, 51]"
     },
     {
       "name": "SCHEME_SALTED_SHA256",

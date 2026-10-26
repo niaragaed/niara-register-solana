@@ -40,6 +40,36 @@ pub const SCHEME_SIGNED_PDF_SHA256: u8 = 0;
 #[constant]
 pub const SCHEME_SALTED_SHA256: u8 = 1;
 
+// ---------------------------------------------------------------------------
+// v3: commit-reveal and ORB attestation
+// ---------------------------------------------------------------------------
+
+/// v3 record: ["record_v3", record_hash].
+#[constant]
+pub const RECORD_V3_SEED: &[u8] = b"record_v3";
+
+/// Pending commitment: ["commitment", signer, commitment].
+#[constant]
+pub const COMMITMENT_SEED: &[u8] = b"commitment";
+
+/// commitment = SHA-256("niara-commit-v1" || program_id || signer || record_hash || nonce).
+/// Must match the site's lib/commit-reveal.ts.
+#[constant]
+pub const COMMIT_DOMAIN: &[u8] = b"niara-commit-v1";
+
+/// A commitment can be revealed for this long (and only in a later slot).
+#[constant]
+pub const COMMITMENT_TTL_SECONDS: i64 = 86_400;
+
+/// ORB attester settings: ["orb_config"].
+#[constant]
+pub const ORB_CONFIG_SEED: &[u8] = b"orb_config";
+
+/// The ORB attester signs, with Ed25519, the 32-byte
+/// SHA-256("niara-orb-v1" || program_id || record_hash || report_hash || signer).
+#[constant]
+pub const ORB_DOMAIN: &[u8] = b"niara-orb-v1";
+
 /// Receipt metadata URI = metadata_base_url + 64 hex digits; the Metaplex
 /// limit for the URI is 200 bytes.
 pub const MAX_METADATA_BASE_URL: usize = 136;
@@ -70,3 +100,5 @@ pub const MPL_ACCOUNT_COMPRESSION_ID: Pubkey =
 pub const MPL_CORE_ID: Pubkey = pubkey!("CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d");
 pub const MPL_BUBBLEGUM_ID: Pubkey = pubkey!("BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY");
 pub const MPL_CORE_CPI_SIGNER_SEED: &[u8] = b"mpl_core_cpi_signer";
+pub const ED25519_PROGRAM_ID: Pubkey = pubkey!("Ed25519SigVerify111111111111111111111111111");
+pub const INSTRUCTIONS_SYSVAR_ID: Pubkey = pubkey!("Sysvar1nstructions1111111111111111111111111");

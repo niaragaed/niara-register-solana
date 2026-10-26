@@ -873,6 +873,9 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "mpl-bubblegum",
+ "solana-instructions-sysvar",
+ "solana-sdk-ids",
+ "solana-sha256-hasher",
 ]
 
 [[package]]

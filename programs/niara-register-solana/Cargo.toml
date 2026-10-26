@@ -23,6 +23,10 @@ custom-panic = []
 [dependencies]
 anchor-lang = "1.2.1"
 mpl-bubblegum = "4.0.0"
+# Commit-reveal hash and ORB attestation check (not re-exported by anchor-lang 1.x).
+solana-sha256-hasher = "3"
+solana-instructions-sysvar = "3"
+solana-sdk-ids = "3"
 
 
 [lints.rust]

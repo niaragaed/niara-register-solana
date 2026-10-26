@@ -92,6 +92,74 @@ pub struct DocumentRegisteredV2 {
 }
 
 // ---------------------------------------------------------------------------
+// v3: commit-reveal and ORB attestation
+// ---------------------------------------------------------------------------
+
+/// A commitment to a record hash, made before revealing it. Closed (rent back
+/// to the signer) by register_v3 or cancel_commitment.
+#[account]
+#[derive(InitSpace)]
+pub struct Commitment {
+    pub signer: Pubkey,
+    pub slot: u64,
+    pub timestamp: i64,
+    pub bump: u8,
+}
+
+/// Who may sign ORB attestations. Pubkey::default() means ORB is off.
+#[account]
+#[derive(InitSpace)]
+pub struct OrbConfig {
+    pub attester: Pubkey,
+    pub bump: u8,
+}
+
+/// v2 record plus the ORB report hash. Registered through commit-reveal.
+#[account]
+#[derive(InitSpace)]
+pub struct RecordV3 {
+    pub signer: Pubkey,
+    pub record_hash: [u8; 32],
+    pub scheme: u8,
+    pub document_type: u16,
+    pub metadata_commitment: [u8; 32],
+    /// Hash of the ORB analysis report attested by the ORB key; all zeros if none.
+    pub orb_report_hash: [u8; 32],
+    pub timestamp: i64,
+    pub slot: u64,
+    pub receipt_asset_id: Pubkey,
+    pub receipt_tree: Pubkey,
+    pub receipt_nonce: u64,
+    pub bump: u8,
+}
+
+#[event]
+pub struct Committed {
+    pub signer: Pubkey,
+    pub commitment: [u8; 32],
+    pub slot: u64,
+}
+
+#[event]
+pub struct DocumentRegisteredV3 {
+    pub record_hash: [u8; 32],
+    pub signer: Pubkey,
+    pub scheme: u8,
+    pub document_type: u16,
+    pub metadata_commitment: [u8; 32],
+    pub orb_report_hash: [u8; 32],
+    pub timestamp: i64,
+    pub slot: u64,
+    pub receipt_asset_id: Pubkey,
+}
+
+#[event]
+pub struct OrbAttesterChanged {
+    pub previous: Pubkey,
+    pub attester: Pubkey,
+}
+
+// ---------------------------------------------------------------------------
 // Transferable records (MLETR-aligned)
 // ---------------------------------------------------------------------------
 

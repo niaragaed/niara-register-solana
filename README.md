@@ -31,6 +31,43 @@ npx ts-node scripts/setup-receipts.ts
 
 Tests: `bash scripts/fetch-fixtures.sh` once, then `anchor build --ignore-keys && bash scripts/test-local.sh` (local validator with the Metaplex programs and Squads v4 loaded).
 
+## v3: commit-reveal and ORB attestation (needs another program upgrade)
+
+`register_v2` registered in one transaction, so whoever saw it pending could send the same hash
+first (Solana has no public mempool like Ethereum, but leaders and relays do see transactions).
+v3 replaces it:
+
+1. **`commit(commitment)`** with `commitment = SHA-256("niara-commit-v1" ‖ program_id ‖ signer ‖
+   record_hash ‖ nonce)` creates the PDA `["commitment", signer, commitment]`. It says nothing
+   about the document. `cancel_commitment` closes a pending one (rent back).
+2. **`register_v3(record_hash, scheme, document_type, metadata_commitment, nonce, orb_report_hash)`**
+   in a **later slot** and within 24 h. The handler recomputes the commitment and checks that the
+   account passed is the signer's own PDA for it, then closes it. A copy of the transaction sent by
+   someone else has no such account. Same receipt as v2; the record goes to
+   `["record_v3", hash]` (`RecordV3` = v2 fields + `orb_report_hash`), and a hash with a v1 or v2
+   record is refused.
+
+**ORB attestation.** A non-zero `orb_report_hash` is accepted only if the instruction right
+before `register_v3` is a Solana Ed25519-program instruction in which the ORB attester key signs
+`SHA-256("niara-orb-v1" ‖ program_id ‖ record_hash ‖ report_hash ‖ signer)` (a digest, so the
+whole transaction still fits in 1232 bytes). The attester lives in `["orb_config"]`
+(`initialize_orb_config`, upgrade authority only); `set_orb_attester` can be called by the
+current attester (key rotation) or the upgrade authority. Without the config, ORB is off.
+
+`register_v2` is removed by this upgrade: the site must switch to v3 in the same release
+(`NEXT_PUBLIC_SOLANA_REGISTER_V3=1` in Niara-Register). Old `RecordV2` accounts stay readable
+(the site and the indexer decode them by hand; the `RecordV2` type is no longer in the IDL because
+no instruction uses it).
+
+Upgrade steps (upgrade authority wallet; through Squads once the hand-over is done):
+
+```bash
+anchor build                                  # or cargo-build-sbf, see "Run the tests"
+solana program deploy -u devnet target/deploy/niara_register_solana.so \
+  --program-id 9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR
+# then, only when an ORB attester key exists: initialize_orb_config(<attester pubkey>)
+```
+
 ## Live on Solana devnet
 
 - Program: [`9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR`](https://explorer.solana.com/address/9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR?cluster=devnet)
@@ -77,10 +114,14 @@ anchor build --ignore-keys
 bash scripts/test-local.sh
 ```
 
-22 tests: receipt infrastructure (frozen collection held by the program PDA,
-config changes only by the current upgrade authority), `register_v2` (no readable metadata, the receipt leaf
+34 tests: receipt infrastructure (frozen collection held by the program PDA,
+config changes only by the current upgrade authority), `register_v3` (no readable metadata, the receipt leaf
 rebuilt and matched against the on-chain tree root, transfer refused even for
-the owner, duplicate/zero/unknown-scheme/foreign-tree rejection), the full
+the owner, duplicate/zero/unknown-scheme/foreign-tree rejection; commit-reveal:
+no commitment, same slot, wrong nonce, another hash's commitment, a front-runner
+copying the reveal or passing the victim's commitment, close and cancel; ORB:
+off without config, valid attestation, missing/foreign key/other signer/other
+record/other report refused, attester rotation), the full
 transferable-record life-cycle, and a rehearsal of the Squads multisig admin
 (`tests/squads.ts`, with the real Squads v4 program: hand-over, upgrade and
 config change only after 2 approvals and the time lock).
@@ -107,9 +148,14 @@ wallet (Phantom/Solflare) only signs — the transaction is sent through a devne
 
 ## Known limitations
 
-- Same as the EVM version: whoever lands the first transaction for a hash becomes
-  its signer. A commit–reveal or multi-signer record (one PDA per
-  `[hash, signer]`) is on the roadmap for contracts with several parties.
+- Commit-reveal (v3) stops copying a pending registration. It does not stop
+  someone who already holds the document hash (e.g. the other party of a
+  contract) from committing and registering it first with their own key: the
+  record says who registered it, and for a PAdES PDF who signed it is inside
+  the PDF. A multi-signer record (one PDA per `[hash, signer]`) is on the
+  roadmap for contracts with several parties.
+- `cargo-build-sbf` 3.0.x ships platform-tools v1.51 (Rust 1.84), too old for
+  some current dependencies (edition 2024); build with platform-tools v1.52.
 - Devnet only for now. Mainnet comes after an external audit.
 
 ## Development history (disclosure)
