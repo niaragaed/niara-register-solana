@@ -40,23 +40,18 @@ pub struct RegisterV3<'info> {
     )]
     pub config: Box<Account<'info, Config>>,
 
-    /// `init` fails if the PDA already exists: one record per hash, forever.
+    /// One record per (hash, signer): `init` fails if this signer already
+    /// registered this hash. Other signers get their own PDA, so nobody can
+    /// block or take anyone else's record (v1/v2 had one record per hash and
+    /// the first wallet locked everyone else out).
     #[account(
         init,
         payer = signer,
         space = 8 + RecordV3::INIT_SPACE,
-        seeds = [RECORD_V3_SEED, record_hash.as_ref()],
+        seeds = [RECORD_V3_SEED, record_hash.as_ref(), signer.key().as_ref()],
         bump
     )]
     pub record: Box<Account<'info, RecordV3>>,
-
-    /// CHECK: the v2 PDA for the same hash; must not hold a v2 record.
-    #[account(seeds = [RECORD_V2_SEED, record_hash.as_ref()], bump)]
-    pub record_v2: UncheckedAccount<'info>,
-
-    /// CHECK: the v1 PDA for the same hash; must not hold a v1 record.
-    #[account(seeds = [ASSINATURA_SEED, record_hash.as_ref()], bump)]
-    pub legacy_record: UncheckedAccount<'info>,
 
     /// Needed only with an ORB attestation.
     #[account(seeds = [ORB_CONFIG_SEED], bump = orb_config.bump)]
@@ -120,9 +115,12 @@ fn hex(bytes: &[u8]) -> String {
     out
 }
 
-fn is_unused(account: &UncheckedAccount) -> bool {
-    // Only the data matters; anyone can send lamports to an address.
-    account.data_is_empty() && account.owner == &anchor_lang::system_program::ID
+/// Receipt metadata URI: base + hash hex + "/" + signer (base58). Metaplex caps
+/// the URI at 200 bytes, which leaves 91 bytes for the base URL.
+fn receipt_uri(base: &str, record_hash: &[u8; 32], signer: &Pubkey) -> Result<String> {
+    let uri = format!("{}{}/{}", base, hex(record_hash), signer);
+    require!(uri.len() <= MAX_RECEIPT_URI, ErrorCode::ReceiptUriTooLong);
+    Ok(uri)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -138,16 +136,6 @@ pub fn handle_register_v3(
     require!(record_hash != [0u8; 32], ErrorCode::HashInvalido);
     require!(scheme <= SCHEME_SALTED_SHA256, ErrorCode::UnknownScheme);
     require!(document_type != 0, ErrorCode::InvalidDocumentType);
-
-    // One record per hash across v1, v2 and v3.
-    require!(
-        is_unused(&ctx.accounts.legacy_record),
-        ErrorCode::AlreadyRegisteredV1
-    );
-    require!(
-        is_unused(&ctx.accounts.record_v2),
-        ErrorCode::AlreadyRegisteredV2
-    );
 
     // The commitment account must be the one at
     // ["commitment", signer, commitment_of(signer, record_hash, nonce)]:
@@ -205,7 +193,11 @@ pub fn handle_register_v3(
     let metadata = MetadataArgsV2 {
         name: RECEIPT_NAME.to_string(),
         symbol: RECEIPT_SYMBOL.to_string(),
-        uri: format!("{}{}", config.metadata_base_url, hex(&record_hash)),
+        uri: receipt_uri(
+            &config.metadata_base_url,
+            &record_hash,
+            &ctx.accounts.signer.key(),
+        )?,
         seller_fee_basis_points: 0,
         primary_sale_happened: false,
         is_mutable: false,

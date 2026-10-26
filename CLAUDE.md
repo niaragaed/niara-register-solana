@@ -23,7 +23,9 @@ New `ErrorCode` variants go at the end so existing codes do not move.
   commitment and ORB message recipes must stay identical to
   `lib/commit-reveal.ts` in Niara-Register (vectors in the unit tests of
   `instructions/commit.rs`). Never re-add a one-transaction register path: it
-  reopens front-running.
+  reopens front-running. v3 records are one per (hash, signer)
+  (`["record_v3", hash, signer]`); never go back to one per hash, which let
+  whoever held the hash first lock the real signer out.
 - `register_v2` (removed in v3; same fields minus ORB) stored only the record hash, the hash scheme, a public
   document type code (fixed list, never free text) and a salted metadata commitment, and mints a soulbound cNFT receipt (Bubblegum v2) to the
   signer in the same transaction. The collection is MPL-Core with

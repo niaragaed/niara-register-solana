@@ -44,7 +44,7 @@ pub const SCHEME_SALTED_SHA256: u8 = 1;
 // v3: commit-reveal and ORB attestation
 // ---------------------------------------------------------------------------
 
-/// v3 record: ["record_v3", record_hash].
+/// v3 record, one per (document, signer): ["record_v3", record_hash, signer].
 #[constant]
 pub const RECORD_V3_SEED: &[u8] = b"record_v3";
 
@@ -73,6 +73,9 @@ pub const ORB_DOMAIN: &[u8] = b"niara-orb-v1";
 /// Receipt metadata URI = metadata_base_url + 64 hex digits; the Metaplex
 /// limit for the URI is 200 bytes.
 pub const MAX_METADATA_BASE_URL: usize = 136;
+
+/// Metaplex limit for a cNFT metadata URI.
+pub const MAX_RECEIPT_URI: usize = 200;
 
 pub const RECEIPT_NAME: &str = "Niara Register receipt";
 pub const RECEIPT_SYMBOL: &str = "NIARA-R";

@@ -13,8 +13,8 @@
 //!
 //! v2 (`register_v2`, one transaction, front-runnable) and v1 (`registrar`,
 //! plain-text name and type) were removed. Their accounts (`RecordV2`,
-//! `Assinatura`) stay on-chain and readable, and a hash with a v1 or v2 record
-//! cannot be registered again.
+//! `Assinatura`) stay on-chain and readable. v3 records are one per
+//! (hash, signer), so no wallet can block or take another's record.
 //!
 //! The program also holds MLETR-aligned transferable records (see
 //! `instructions/transferable.rs`).

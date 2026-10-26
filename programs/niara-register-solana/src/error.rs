@@ -52,6 +52,7 @@ pub enum ErrorCode {
     RevealTooEarly,
     #[msg("The commitment expired; commit again")]
     CommitmentExpired,
+    /// Unused since records became one per (hash, signer); kept so later codes do not move.
     #[msg("This hash already has a v2 record")]
     AlreadyRegisteredV2,
     #[msg("ORB attestation is not enabled")]
@@ -62,4 +63,6 @@ pub enum ErrorCode {
     NotOrbAuthority,
     #[msg("The commitment account does not match this signer, hash and nonce")]
     CommitmentMismatch,
+    #[msg("Receipt URI over 200 bytes: shorten the metadata base URL")]
+    ReceiptUriTooLong,
 }

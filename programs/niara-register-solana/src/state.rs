@@ -114,7 +114,8 @@ pub struct OrbConfig {
     pub bump: u8,
 }
 
-/// v2 record plus the ORB report hash. Registered through commit-reveal.
+/// v2 record plus the ORB report hash, one per (hash, signer). Registered
+/// through commit-reveal at ["record_v3", record_hash, signer].
 #[account]
 #[derive(InitSpace)]
 pub struct RecordV3 {

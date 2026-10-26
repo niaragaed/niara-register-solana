@@ -95,9 +95,9 @@ describe("niara-register v3 (Solana)", () => {
     return kp;
   }
 
-  const recordPda = (hash: Buffer) =>
+  const recordPda = (hash: Buffer, signer: PublicKey) =>
     PublicKey.findProgramAddressSync(
-      [Buffer.from("record_v3"), hash],
+      [Buffer.from("record_v3"), hash, signer.toBuffer()],
       program.programId
     )[0];
 
@@ -366,7 +366,9 @@ describe("niara-register v3 (Solana)", () => {
 
       await registerV3(signer, fileHash, 0, arr(meta));
 
-      const rec = await program.account.recordV3.fetch(recordPda(fileHash));
+      const rec = await program.account.recordV3.fetch(
+        recordPda(fileHash, signer.publicKey)
+      );
       assert.equal(rec.signer.toBase58(), signer.publicKey.toBase58());
       assert.deepEqual(Buffer.from(rec.recordHash), fileHash);
       assert.equal(rec.scheme, 0);
@@ -387,7 +389,11 @@ describe("niara-register v3 (Solana)", () => {
       const metadata = {
         name: "Niara Register receipt",
         symbol: "NIARA-R",
-        uri: BASE_URL + fileHash.toString("hex"),
+        uri:
+          BASE_URL +
+          fileHash.toString("hex") +
+          "/" +
+          signer.publicKey.toBase58(),
         sellerFeeBasisPoints: 0,
         primarySaleHappened: false,
         isMutable: false,
@@ -462,12 +468,29 @@ describe("niara-register v3 (Solana)", () => {
       assert.deepEqual(event.orbReportHash, ZERO32);
     });
 
-    it("one record per hash, whoever signs", async () => {
+    it("one record per (hash, signer): another wallet gets its own, the same wallet cannot repeat", async () => {
       const a = await fundedWallet();
       const b = await fundedWallet();
       const hash = sha256("dup " + Date.now());
+      // b holds the hash too (e.g. the other party) and registers first: a is not locked out.
+      await registerV3(b, hash, 1, ZERO32);
       await registerV3(a, hash, 0, ZERO32);
-      await expectError(registerV3(b, hash, 1, ZERO32), "already in use");
+      const ra = await program.account.recordV3.fetch(
+        recordPda(hash, a.publicKey)
+      );
+      const rb = await program.account.recordV3.fetch(
+        recordPda(hash, b.publicKey)
+      );
+      assert.equal(ra.signer.toBase58(), a.publicKey.toBase58());
+      assert.equal(rb.signer.toBase58(), b.publicKey.toBase58());
+      assert.notEqual(
+        ra.receiptAssetId.toBase58(),
+        rb.receiptAssetId.toBase58()
+      );
+      await expectError(
+        registerV3(a, hash, 0, ZERO32, 1, { nonce: Buffer.alloc(32, 8) }),
+        "already in use"
+      );
     });
 
     it("rejects a zero hash, unknown schemes and document type 0", async () => {
@@ -571,7 +594,9 @@ describe("niara-register v3 (Solana)", () => {
         "ConstraintHasOne"
       );
       await reveal(alice, hash, 0, ZERO32);
-      const rec = await program.account.recordV3.fetch(recordPda(hash));
+      const rec = await program.account.recordV3.fetch(
+        recordPda(hash, alice.publicKey)
+      );
       assert.equal(rec.signer.toBase58(), alice.publicKey.toBase58());
     });
 
@@ -668,7 +693,9 @@ describe("niara-register v3 (Solana)", () => {
           preIx: edIx(attester, orbMessage(hash, REPORT, a.publicKey)),
         },
       });
-      const rec = await program.account.recordV3.fetch(recordPda(hash));
+      const rec = await program.account.recordV3.fetch(
+        recordPda(hash, a.publicKey)
+      );
       assert.deepEqual(Buffer.from(rec.orbReportHash), REPORT);
     });
 

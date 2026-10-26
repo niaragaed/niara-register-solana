@@ -43,9 +43,14 @@ v3 replaces it:
 2. **`register_v3(record_hash, scheme, document_type, metadata_commitment, nonce, orb_report_hash)`**
    in a **later slot** and within 24 h. The handler recomputes the commitment and checks that the
    account passed is the signer's own PDA for it, then closes it. A copy of the transaction sent by
-   someone else has no such account. Same receipt as v2; the record goes to
-   `["record_v3", hash]` (`RecordV3` = v2 fields + `orb_report_hash`), and a hash with a v1 or v2
-   record is refused.
+   someone else has no such account. Same receipt as v2 (metadata URI = base + hash + "/" + signer,
+   so the base URL must be at most 91 bytes); the record goes to `["record_v3", hash, signer]`
+   (`RecordV3` = v2 fields + `orb_report_hash`).
+3. **One record per (hash, signer).** v1/v2 had one record per hash, so whoever held the hash first
+   (the other party of a contract, say) could register it and lock the real signer out. In v3 every
+   wallet that registers a hash gets its own record and receipt; the same wallet cannot register
+   the same hash twice. List all registrants of a hash with `getProgramAccounts` filtered on
+   `record_hash` (offset 40 of `RecordV3`).
 
 **ORB attestation.** A non-zero `orb_report_hash` is accepted only if the instruction right
 before `register_v3` is a Solana Ed25519-program instruction in which the ORB attester key signs
@@ -148,12 +153,8 @@ wallet (Phantom/Solflare) only signs — the transaction is sent through a devne
 
 ## Known limitations
 
-- Commit-reveal (v3) stops copying a pending registration. It does not stop
-  someone who already holds the document hash (e.g. the other party of a
-  contract) from committing and registering it first with their own key: the
-  record says who registered it, and for a PAdES PDF who signed it is inside
-  the PDF. A multi-signer record (one PDA per `[hash, signer]`) is on the
-  roadmap for contracts with several parties.
+- A record says which wallet registered a hash and when. Several wallets can
+  register the same hash (v3); who signed a PAdES PDF is inside the PDF.
 - `cargo-build-sbf` 3.0.x ships platform-tools v1.51 (Rust 1.84), too old for
   some current dependencies (edition 2024); build with platform-tools v1.52.
 - Devnet only for now. Mainnet comes after an external audit.

@@ -615,7 +615,10 @@ export type NiaraRegisterSolana = {
         {
           "name": "record",
           "docs": [
-            "`init` fails if the PDA already exists: one record per hash, forever."
+            "One record per (hash, signer): `init` fails if this signer already",
+            "registered this hash. Other signers get their own PDA, so nobody can",
+            "block or take anyone else's record (v1/v2 had one record per hash and",
+            "the first wallet locked everyone else out)."
           ],
           "writable": true,
           "pda": {
@@ -637,57 +640,10 @@ export type NiaraRegisterSolana = {
               {
                 "kind": "arg",
                 "path": "recordHash"
-              }
-            ]
-          }
-        },
-        {
-          "name": "recordV2",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  99,
-                  111,
-                  114,
-                  100,
-                  95,
-                  118,
-                  50
-                ]
               },
               {
-                "kind": "arg",
-                "path": "recordHash"
-              }
-            ]
-          }
-        },
-        {
-          "name": "legacyRecord",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  115,
-                  115,
-                  105,
-                  110,
-                  97,
-                  116,
-                  117,
-                  114,
-                  97
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "recordHash"
+                "kind": "account",
+                "path": "signer"
               }
             ]
           }
@@ -1546,6 +1502,11 @@ export type NiaraRegisterSolana = {
       "code": 6026,
       "name": "commitmentMismatch",
       "msg": "The commitment account does not match this signer, hash and nonce"
+    },
+    {
+      "code": 6027,
+      "name": "receiptUriTooLong",
+      "msg": "Receipt URI over 200 bytes: shorten the metadata base URL"
     }
   ],
   "types": [
@@ -2005,7 +1966,8 @@ export type NiaraRegisterSolana = {
     {
       "name": "recordV3",
       "docs": [
-        "v2 record plus the ORB report hash. Registered through commit-reveal."
+        "v2 record plus the ORB report hash, one per (hash, signer). Registered",
+        "through commit-reveal at [\"record_v3\", record_hash, signer]."
       ],
       "type": {
         "kind": "struct",
@@ -2287,7 +2249,7 @@ export type NiaraRegisterSolana = {
     {
       "name": "recordV3Seed",
       "docs": [
-        "v3 record: [\"record_v3\", record_hash]."
+        "v3 record, one per (document, signer): [\"record_v3\", record_hash, signer]."
       ],
       "type": "bytes",
       "value": "[114, 101, 99, 111, 114, 100, 95, 118, 51]"
