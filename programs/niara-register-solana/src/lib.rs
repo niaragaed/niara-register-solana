@@ -1,14 +1,20 @@
 //! Niara Register on Solana: proof of existence and authorship for documents.
 //!
-//! v2 (`register_v2`) stores only the record hash, the hash scheme and a salted
-//! metadata commitment, and mints a non-transferable compressed NFT receipt
-//! (Bubblegum v2, into an MPL-Core collection frozen by a permanent freeze
-//! delegate) to the signer in the same transaction. Same semantics as
-//! `SignatureRegistryV2.sol` on the EVM networks.
+//! v3 registers in two steps (commit-reveal), so a pending registration cannot
+//! be front-run: `commit` stores SHA-256("niara-commit-v1" || program ||
+//! signer || record_hash || nonce) under the signer's address, and
+//! `register_v3`, in a later slot, reveals the hash and nonce. A record can
+//! also carry the hash of an ORB analysis report, accepted only with an
+//! Ed25519 signature from the ORB attester key. The record stores the record
+//! hash, scheme, document type code, a salted metadata commitment and the ORB
+//! report hash, and a non-transferable compressed NFT receipt (Bubblegum v2,
+//! MPL-Core collection frozen by a permanent freeze delegate) goes to the
+//! signer in the same transaction. Same semantics as SignatureRegistryV3.sol.
 //!
-//! v1 (`registrar`) was removed because it wrote the document name and type
-//! in plain text. Existing v1 accounts (`Assinatura`) stay on-chain and
-//! readable, and a hash with a v1 record cannot be registered again in v2.
+//! v2 (`register_v2`, one transaction, front-runnable) and v1 (`registrar`,
+//! plain-text name and type) were removed. Their accounts (`RecordV2`,
+//! `Assinatura`) stay on-chain and readable. v3 records are one per
+//! (hash, signer), so no wallet can block or take another's record.
 //!
 //! The program also holds MLETR-aligned transferable records (see
 //! `instructions/transferable.rs`).
@@ -63,23 +69,53 @@ pub mod niara_register_solana {
         )
     }
 
-    /// Registers a document fingerprint and mints a soulbound cNFT receipt
-    /// to the signer. The document name never goes on-chain; the type goes
-    /// as a public code from a fixed list.
-    pub fn register_v2(
-        ctx: Context<RegisterV2>,
+    /// Commit step of commit-reveal (see `instructions/commit.rs`).
+    pub fn commit(ctx: Context<Commit>, commitment: [u8; 32]) -> Result<()> {
+        crate::instructions::commit::handle_commit(ctx, commitment)
+    }
+
+    /// Closes the signer's pending commitment and returns its rent.
+    pub fn cancel_commitment(_ctx: Context<CancelCommitment>, _commitment: [u8; 32]) -> Result<()> {
+        Ok(())
+    }
+
+    /// Reveal step: registers a committed document fingerprint and mints a
+    /// soulbound cNFT receipt to the signer. With a non-zero
+    /// `orb_report_hash`, the previous instruction must be the ORB attester's
+    /// Ed25519 signature (see `instructions/orb.rs`).
+    #[allow(clippy::too_many_arguments)]
+    pub fn register_v3(
+        ctx: Context<RegisterV3>,
         record_hash: [u8; 32],
         scheme: u8,
         document_type: u16,
         metadata_commitment: [u8; 32],
+        nonce: [u8; 32],
+        orb_report_hash: [u8; 32],
     ) -> Result<()> {
-        crate::instructions::register_v2::handle_register_v2(
+        crate::instructions::register_v3::handle_register_v3(
             ctx,
             record_hash,
             scheme,
             document_type,
             metadata_commitment,
+            nonce,
+            orb_report_hash,
         )
+    }
+
+    /// Creates the ORB config with its attester key. Program upgrade authority only.
+    pub fn initialize_orb_config(
+        ctx: Context<InitializeOrbConfig>,
+        attester: Pubkey,
+    ) -> Result<()> {
+        crate::instructions::orb::handle_initialize_orb_config(ctx, attester)
+    }
+
+    /// Changes the ORB attester (current attester or upgrade authority).
+    /// Pubkey::default() turns ORB off.
+    pub fn set_orb_attester(ctx: Context<SetOrbAttester>, attester: Pubkey) -> Result<()> {
+        crate::instructions::orb::handle_set_orb_attester(ctx, attester)
     }
 
     /// Issues a transferable record and gives control to `holder`.

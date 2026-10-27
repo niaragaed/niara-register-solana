@@ -17,7 +17,16 @@ New `ErrorCode` variants go at the end so existing codes do not move.
 - v1 (`registrar`) was **removed**: it wrote the document name and type in
   plain text. v1 accounts stay on-chain and readable (decoded by hand in the
   site and the indexer), and `register_v2` refuses a hash that has a v1 record.
-- `register_v2` stores only the record hash, the hash scheme, a public
+- v3 replaced `register_v2` with `commit` + `register_v3` (commit-reveal) and
+  added the optional ORB attestation (`instructions/orb.rs`: Ed25519
+  instruction right before `register_v3`, attester in `["orb_config"]`). The
+  commitment and ORB message recipes must stay identical to
+  `lib/commit-reveal.ts` in Niara-Register (vectors in the unit tests of
+  `instructions/commit.rs`). Never re-add a one-transaction register path: it
+  reopens front-running. v3 records are one per (hash, signer)
+  (`["record_v3", hash, signer]`); never go back to one per hash, which let
+  whoever held the hash first lock the real signer out.
+- `register_v2` (removed in v3; same fields minus ORB) stored only the record hash, the hash scheme, a public
   document type code (fixed list, never free text) and a salted metadata commitment, and mints a soulbound cNFT receipt (Bubblegum v2) to the
   signer in the same transaction. The collection is MPL-Core with
   `PermanentFreezeDelegate { frozen: true }` held by the `receipt_authority`

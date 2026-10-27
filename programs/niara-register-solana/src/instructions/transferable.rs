@@ -138,10 +138,16 @@ pub fn handle_issue_record(
     Ok(())
 }
 
-pub fn handle_transfer_control(ctx: Context<ControllerAction>, new_controller: Pubkey) -> Result<()> {
+pub fn handle_transfer_control(
+    ctx: Context<ControllerAction>,
+    new_controller: Pubkey,
+) -> Result<()> {
     let record = &mut ctx.accounts.record;
     require_active(record)?;
-    require!(new_controller != Pubkey::default(), ErrorCode::InvalidHolder);
+    require!(
+        new_controller != Pubkey::default(),
+        ErrorCode::InvalidHolder
+    );
 
     let from = record.controller;
     record.controller = new_controller;
@@ -179,11 +185,16 @@ pub fn handle_propose_amendment(
 pub fn handle_cancel_amendment(ctx: Context<IssuerAction>) -> Result<()> {
     let record = &mut ctx.accounts.record;
     require_active(record)?;
-    require!(record.pending_hash != [0u8; 32], ErrorCode::NoPendingAmendment);
+    require!(
+        record.pending_hash != [0u8; 32],
+        ErrorCode::NoPendingAmendment
+    );
 
     record.pending_hash = [0u8; 32];
     record.pending_metadata_commitment = [0u8; 32];
-    emit!(AmendmentCancelled { record: record.key() });
+    emit!(AmendmentCancelled {
+        record: record.key()
+    });
     Ok(())
 }
 
@@ -193,7 +204,10 @@ pub fn handle_accept_amendment(
 ) -> Result<()> {
     let record = &mut ctx.accounts.record;
     require_active(record)?;
-    require!(record.pending_hash != [0u8; 32], ErrorCode::NoPendingAmendment);
+    require!(
+        record.pending_hash != [0u8; 32],
+        ErrorCode::NoPendingAmendment
+    );
     require!(
         record.pending_hash == expected_document_hash,
         ErrorCode::AmendmentMismatch
@@ -241,7 +255,10 @@ pub fn handle_terminate(ctx: Context<IssuerAction>, reason: u8) -> Result<()> {
         record.status == ETR_STATUS_SURRENDERED,
         ErrorCode::NotSurrendered
     );
-    require!(reason <= ETR_REASON_OTHER, ErrorCode::UnknownTerminationReason);
+    require!(
+        reason <= ETR_REASON_OTHER,
+        ErrorCode::UnknownTerminationReason
+    );
 
     record.status = ETR_STATUS_TERMINATED;
     emit!(RecordTerminated {

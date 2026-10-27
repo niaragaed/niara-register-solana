@@ -114,6 +114,143 @@ export type NiaraRegisterSolana = {
       "args": []
     },
     {
+      "name": "cancelCommitment",
+      "docs": [
+        "Closes the signer's pending commitment and returns its rent."
+      ],
+      "discriminator": [
+        36,
+        39,
+        70,
+        137,
+        71,
+        179,
+        88,
+        232
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "pending"
+          ]
+        },
+        {
+          "name": "pending",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "arg",
+                "path": "commitment"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "commit",
+      "docs": [
+        "Commit step of commit-reveal (see `instructions/commit.rs`)."
+      ],
+      "discriminator": [
+        223,
+        140,
+        142,
+        165,
+        229,
+        208,
+        156,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "pending",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  105,
+                  116,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "signer"
+              },
+              {
+                "kind": "arg",
+                "path": "commitment"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "initializeConfig",
       "docs": [
         "Creates the receipt configuration. Program upgrade authority only."
@@ -177,6 +314,69 @@ export type NiaraRegisterSolana = {
         {
           "name": "metadataBaseUrl",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "initializeOrbConfig",
+      "docs": [
+        "Creates the ORB config with its attester key. Program upgrade authority only."
+      ],
+      "discriminator": [
+        62,
+        203,
+        98,
+        7,
+        85,
+        252,
+        108,
+        14
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "orbConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  98,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR"
+        },
+        {
+          "name": "programData"
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "attester",
+          "type": "pubkey"
         }
       ]
     },
@@ -353,21 +553,22 @@ export type NiaraRegisterSolana = {
       ]
     },
     {
-      "name": "registerV2",
+      "name": "registerV3",
       "docs": [
-        "Registers a document fingerprint and mints a soulbound cNFT receipt",
-        "to the signer. The document name never goes on-chain; the type goes",
-        "as a public code from a fixed list."
+        "Reveal step: registers a committed document fingerprint and mints a",
+        "soulbound cNFT receipt to the signer. With a non-zero",
+        "`orb_report_hash`, the previous instruction must be the ORB attester's",
+        "Ed25519 signature (see `instructions/orb.rs`)."
       ],
       "discriminator": [
+        158,
+        43,
+        192,
+        255,
         225,
-        250,
-        193,
-        26,
-        37,
-        179,
-        205,
-        76
+        42,
+        188,
+        131
       ],
       "accounts": [
         {
@@ -377,7 +578,21 @@ export type NiaraRegisterSolana = {
             "the receipt. No Niara custody in between."
           ],
           "writable": true,
-          "signer": true
+          "signer": true,
+          "relations": [
+            "commitment"
+          ]
+        },
+        {
+          "name": "commitment",
+          "docs": [
+            "The signer's own commitment to (record_hash, nonce). Its address is",
+            "derived from the signer, so a copy of this transaction sent by someone",
+            "else points at an account that does not exist. The address is checked",
+            "in the handler (the seed is a hash of the arguments, which the IDL",
+            "cannot express). Closed here."
+          ],
+          "writable": true
         },
         {
           "name": "config",
@@ -400,7 +615,10 @@ export type NiaraRegisterSolana = {
         {
           "name": "record",
           "docs": [
-            "`init` fails if the PDA already exists: one record per hash, forever."
+            "One record per (hash, signer): `init` fails if this signer already",
+            "registered this hash. Other signers get their own PDA, so nobody can",
+            "block or take anyone else's record (v1/v2 had one record per hash and",
+            "the first wallet locked everyone else out)."
           ],
           "writable": true,
           "pda": {
@@ -416,41 +634,49 @@ export type NiaraRegisterSolana = {
                   100,
                   95,
                   118,
-                  50
+                  51
                 ]
               },
               {
                 "kind": "arg",
                 "path": "recordHash"
+              },
+              {
+                "kind": "account",
+                "path": "signer"
               }
             ]
           }
         },
         {
-          "name": "legacyRecord",
+          "name": "orbConfig",
+          "docs": [
+            "Needed only with an ORB attestation."
+          ],
+          "optional": true,
           "pda": {
             "seeds": [
               {
                 "kind": "const",
                 "value": [
-                  97,
-                  115,
-                  115,
-                  105,
-                  110,
-                  97,
-                  116,
-                  117,
+                  111,
                   114,
-                  97
+                  98,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
                 ]
-              },
-              {
-                "kind": "arg",
-                "path": "recordHash"
               }
             ]
           }
+        },
+        {
+          "name": "instructionsSysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
         },
         {
           "name": "receiptAuthority",
@@ -659,6 +885,83 @@ export type NiaraRegisterSolana = {
               32
             ]
           }
+        },
+        {
+          "name": "nonce",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "orbReportHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "setOrbAttester",
+      "docs": [
+        "Changes the ORB attester (current attester or upgrade authority).",
+        "Pubkey::default() turns ORB off."
+      ],
+      "discriminator": [
+        196,
+        154,
+        120,
+        96,
+        145,
+        230,
+        183,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "orbConfig",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  114,
+                  98,
+                  95,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "9RPHqLouFjoUbPdcmA1GyHMeDoWvjZMuCyYFPBWLmTcR"
+        },
+        {
+          "name": "programData"
+        }
+      ],
+      "args": [
+        {
+          "name": "attester",
+          "type": "pubkey"
         }
       ]
     },
@@ -828,6 +1131,19 @@ export type NiaraRegisterSolana = {
   ],
   "accounts": [
     {
+      "name": "commitment",
+      "discriminator": [
+        61,
+        112,
+        129,
+        128,
+        24,
+        147,
+        77,
+        87
+      ]
+    },
+    {
       "name": "config",
       "discriminator": [
         155,
@@ -841,16 +1157,29 @@ export type NiaraRegisterSolana = {
       ]
     },
     {
-      "name": "recordV2",
+      "name": "orbConfig",
       "discriminator": [
-        255,
-        235,
-        84,
-        155,
-        197,
-        94,
+        123,
+        57,
+        207,
+        203,
+        245,
+        191,
+        102,
+        52
+      ]
+    },
+    {
+      "name": "recordV3",
+      "discriminator": [
+        219,
+        193,
+        191,
+        49,
         92,
-        26
+        106,
+        138,
+        205
       ]
     },
     {
@@ -908,6 +1237,19 @@ export type NiaraRegisterSolana = {
       ]
     },
     {
+      "name": "committed",
+      "discriminator": [
+        70,
+        158,
+        162,
+        86,
+        29,
+        111,
+        143,
+        226
+      ]
+    },
+    {
       "name": "controlTransferred",
       "discriminator": [
         107,
@@ -934,6 +1276,19 @@ export type NiaraRegisterSolana = {
       ]
     },
     {
+      "name": "documentRegisteredV3",
+      "discriminator": [
+        39,
+        180,
+        202,
+        184,
+        125,
+        217,
+        187,
+        244
+      ]
+    },
+    {
       "name": "documentoRegistrado",
       "discriminator": [
         206,
@@ -944,6 +1299,19 @@ export type NiaraRegisterSolana = {
         52,
         33,
         1
+      ]
+    },
+    {
+      "name": "orbAttesterChanged",
+      "discriminator": [
+        42,
+        250,
+        173,
+        254,
+        53,
+        23,
+        40,
+        251
       ]
     },
     {
@@ -1094,6 +1462,51 @@ export type NiaraRegisterSolana = {
       "code": 6018,
       "name": "invalidDocumentType",
       "msg": "Document type must not be 0"
+    },
+    {
+      "code": 6019,
+      "name": "invalidCommitment",
+      "msg": "Commitment must not be all zeros"
+    },
+    {
+      "code": 6020,
+      "name": "revealTooEarly",
+      "msg": "The commitment must be revealed in a later slot"
+    },
+    {
+      "code": 6021,
+      "name": "commitmentExpired",
+      "msg": "The commitment expired; commit again"
+    },
+    {
+      "code": 6022,
+      "name": "alreadyRegisteredV2",
+      "msg": "This hash already has a v2 record"
+    },
+    {
+      "code": 6023,
+      "name": "orbDisabled",
+      "msg": "ORB attestation is not enabled"
+    },
+    {
+      "code": 6024,
+      "name": "invalidOrbAttestation",
+      "msg": "Missing or invalid ORB attestation"
+    },
+    {
+      "code": 6025,
+      "name": "notOrbAuthority",
+      "msg": "Only the ORB attester or the program upgrade authority can do this"
+    },
+    {
+      "code": 6026,
+      "name": "commitmentMismatch",
+      "msg": "The commitment account does not match this signer, hash and nonce"
+    },
+    {
+      "code": 6027,
+      "name": "receiptUriTooLong",
+      "msg": "Receipt URI over 200 bytes: shorten the metadata base URL"
     }
   ],
   "types": [
@@ -1135,6 +1548,59 @@ export type NiaraRegisterSolana = {
                 32
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "commitment",
+      "docs": [
+        "A commitment to a record hash, made before revealing it. Closed (rent back",
+        "to the signer) by register_v3 or cancel_commitment."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "committed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "slot",
+            "type": "u64"
           }
         ]
       }
@@ -1260,6 +1726,65 @@ export type NiaraRegisterSolana = {
       }
     },
     {
+      "name": "documentRegisteredV3",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recordHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "signer",
+            "type": "pubkey"
+          },
+          {
+            "name": "scheme",
+            "type": "u8"
+          },
+          {
+            "name": "documentType",
+            "type": "u16"
+          },
+          {
+            "name": "metadataCommitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "orbReportHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "slot",
+            "type": "u64"
+          },
+          {
+            "name": "receiptAssetId",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "documentoRegistrado",
       "docs": [
         "v1 event, kept in the IDL so past transactions stay decodable. No longer emitted."
@@ -1295,6 +1820,41 @@ export type NiaraRegisterSolana = {
           {
             "name": "slot",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orbAttesterChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "previous",
+            "type": "pubkey"
+          },
+          {
+            "name": "attester",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orbConfig",
+      "docs": [
+        "Who may sign ORB attestations. Pubkey::default() means ORB is off."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "attester",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
@@ -1404,9 +1964,10 @@ export type NiaraRegisterSolana = {
       }
     },
     {
-      "name": "recordV2",
+      "name": "recordV3",
       "docs": [
-        "Privacy-preserving proof of existence. No readable metadata."
+        "v2 record plus the ORB report hash, one per (hash, signer). Registered",
+        "through commit-reveal at [\"record_v3\", record_hash, signer]."
       ],
       "type": {
         "kind": "struct",
@@ -1430,16 +1991,21 @@ export type NiaraRegisterSolana = {
           },
           {
             "name": "documentType",
-            "docs": [
-              "Public document type code from a fixed list (never free text); 0 is invalid.",
-              "Same codes as SignatureRegistryV2.sol (1 contract … 11 other)."
-            ],
             "type": "u16"
           },
           {
             "name": "metadataCommitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "orbReportHash",
             "docs": [
-              "SHA-256(\"niara-meta-v1\" || salt || metadata JSON), or all zeros."
+              "Hash of the ORB analysis report attested by the ORB key; all zeros if none."
             ],
             "type": {
               "array": [
@@ -1458,9 +2024,6 @@ export type NiaraRegisterSolana = {
           },
           {
             "name": "receiptAssetId",
-            "docs": [
-              "Compressed NFT receipt minted to `signer` in the same transaction."
-            ],
             "type": "pubkey"
           },
           {
@@ -1600,6 +2163,31 @@ export type NiaraRegisterSolana = {
       "value": "[97, 115, 115, 105, 110, 97, 116, 117, 114, 97]"
     },
     {
+      "name": "commitmentSeed",
+      "docs": [
+        "Pending commitment: [\"commitment\", signer, commitment]."
+      ],
+      "type": "bytes",
+      "value": "[99, 111, 109, 109, 105, 116, 109, 101, 110, 116]"
+    },
+    {
+      "name": "commitmentTtlSeconds",
+      "docs": [
+        "A commitment can be revealed for this long (and only in a later slot)."
+      ],
+      "type": "i64",
+      "value": "86400"
+    },
+    {
+      "name": "commitDomain",
+      "docs": [
+        "commitment = SHA-256(\"niara-commit-v1\" || program_id || signer || record_hash || nonce).",
+        "Must match the site's lib/commit-reveal.ts."
+      ],
+      "type": "bytes",
+      "value": "[110, 105, 97, 114, 97, 45, 99, 111, 109, 109, 105, 116, 45, 118, 49]"
+    },
+    {
       "name": "configSeed",
       "docs": [
         "Singleton configuration: [\"config\"]."
@@ -1625,6 +2213,23 @@ export type NiaraRegisterSolana = {
       "value": "[101, 116, 114]"
     },
     {
+      "name": "orbConfigSeed",
+      "docs": [
+        "ORB attester settings: [\"orb_config\"]."
+      ],
+      "type": "bytes",
+      "value": "[111, 114, 98, 95, 99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "orbDomain",
+      "docs": [
+        "The ORB attester signs, with Ed25519, the 32-byte",
+        "SHA-256(\"niara-orb-v1\" || program_id || record_hash || report_hash || signer)."
+      ],
+      "type": "bytes",
+      "value": "[110, 105, 97, 114, 97, 45, 111, 114, 98, 45, 118, 49]"
+    },
+    {
       "name": "receiptAuthoritySeed",
       "docs": [
         "PDA that is the tree delegate, the collection update authority and the",
@@ -1640,6 +2245,14 @@ export type NiaraRegisterSolana = {
       ],
       "type": "bytes",
       "value": "[114, 101, 99, 111, 114, 100, 95, 118, 50]"
+    },
+    {
+      "name": "recordV3Seed",
+      "docs": [
+        "v3 record, one per (document, signer): [\"record_v3\", record_hash, signer]."
+      ],
+      "type": "bytes",
+      "value": "[114, 101, 99, 111, 114, 100, 95, 118, 51]"
     },
     {
       "name": "schemeSaltedSha256",
